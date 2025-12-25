@@ -2,7 +2,18 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Thought, AIReflection } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+// Resilient API key retrieval for production environments
+const getApiKey = () => {
+  try {
+    // Check for process.env in a way that doesn't throw if process is undefined
+    const env = (typeof process !== 'undefined' && process.env) || {};
+    return env.API_KEY || "";
+  } catch (e) {
+    return "";
+  }
+};
+
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 export const analyzeThoughts = async (thoughts: Thought[]): Promise<AIReflection | null> => {
   if (thoughts.length === 0) return null;

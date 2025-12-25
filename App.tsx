@@ -29,9 +29,13 @@ const ReadingView: React.FC<{
   const [isCopying, setIsCopying] = useState(false);
 
   useEffect(() => {
-    const resonatedIds = JSON.parse(localStorage.getItem('resonated_thoughts') || '[]');
-    if (resonatedIds.includes(thought.id)) {
-      setHasResonated(true);
+    try {
+      const resonatedIds = JSON.parse(localStorage.getItem('resonated_thoughts') || '[]');
+      if (Array.isArray(resonatedIds) && resonatedIds.includes(thought.id)) {
+        setHasResonated(true);
+      }
+    } catch (e) {
+      console.warn("Storage access failed");
     }
   }, [thought.id]);
 
@@ -40,10 +44,14 @@ const ReadingView: React.FC<{
 
   const handleResonate = () => {
     if (hasResonated) return;
-    const resonatedIds = JSON.parse(localStorage.getItem('resonated_thoughts') || '[]');
-    if (!resonatedIds.includes(thought.id)) {
-      resonatedIds.push(thought.id);
-      localStorage.setItem('resonated_thoughts', JSON.stringify(resonatedIds));
+    try {
+      const resonatedIds = JSON.parse(localStorage.getItem('resonated_thoughts') || '[]');
+      if (Array.isArray(resonatedIds) && !resonatedIds.includes(thought.id)) {
+        resonatedIds.push(thought.id);
+        localStorage.setItem('resonated_thoughts', JSON.stringify(resonatedIds));
+      }
+    } catch (e) {
+      console.warn("Storage update failed");
     }
     onResonate(thought.id);
     setHasResonated(true);
@@ -63,26 +71,26 @@ const ReadingView: React.FC<{
 
   return (
     <div className="fixed inset-0 z-[100] bg-white overflow-y-auto selection:bg-stone-900 selection:text-white animate-reading-entry">
-      {/* Decorative Aura - Pushed to background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 bg-white">
-        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-amber-50/50 blur-[120px] rounded-full animate-pulse-slow"></div>
-        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-stone-100/80 blur-[100px] rounded-full"></div>
+      {/* Ensure solid background layer to prevent any transparency overlap issues */}
+      <div className="fixed inset-0 pointer-events-none -z-10 bg-white">
+        <div className="absolute top-[-5%] right-[-5%] w-[60%] h-[60%] bg-amber-50/40 blur-[120px] rounded-full animate-pulse-slow"></div>
+        <div className="absolute bottom-[-5%] left-[-5%] w-[50%] h-[50%] bg-stone-100/60 blur-[100px] rounded-full"></div>
       </div>
 
       <div className="relative max-w-2xl mx-auto px-8 py-24 md:py-32">
-        {/* Floating Close Button - Keep it separate from text flow */}
+        {/* Floating Close Button - Positioned to stay out of the text block */}
         <button 
           onClick={onClose}
           className="fixed top-8 left-8 md:top-12 md:left-12 group flex items-center gap-4 text-stone-400 hover:text-stone-900 transition-all z-[120]"
         >
-          <div className="w-12 h-12 rounded-full border border-stone-200 bg-white flex items-center justify-center group-hover:border-stone-900 group-hover:bg-stone-900 group-hover:text-white transition-all duration-500 transform group-active:scale-90 shadow-lg">
+          <div className="w-12 h-12 rounded-full border border-stone-200 bg-white/90 backdrop-blur-sm flex items-center justify-center group-hover:border-stone-900 group-hover:bg-stone-900 group-hover:text-white transition-all duration-500 transform group-active:scale-90 shadow-lg">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
           </div>
         </button>
 
-        <header className="mb-16 space-y-8 relative z-10">
+        <header className="mb-20 space-y-10 relative z-10">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
-            <div className="px-5 py-2 bg-stone-900 text-stone-50 text-[10px] font-black uppercase tracking-[0.25em] rounded-full shadow-lg shadow-stone-900/10">
+            <div className="px-5 py-2 bg-stone-900 text-stone-50 text-[10px] font-black uppercase tracking-[0.25em] rounded-full shadow-lg">
               {thought.category}
             </div>
             <div className="flex items-center gap-3 text-[10px] text-stone-400 font-bold uppercase tracking-[0.2em]">
@@ -92,7 +100,7 @@ const ReadingView: React.FC<{
             </div>
           </div>
           
-          <div className="space-y-3 pt-6 border-t border-stone-100">
+          <div className="space-y-3 pt-8 border-t border-stone-100">
             <h1 className="text-[11px] text-stone-400 font-black uppercase tracking-[0.5em] italic block">Archive Fragment {thought.id.slice(0, 4)}</h1>
             <p className="text-[11px] text-stone-400 font-medium uppercase tracking-[0.3em] block">
               Captured {formattedDate} — {formattedTime}
@@ -100,48 +108,50 @@ const ReadingView: React.FC<{
           </div>
         </header>
 
-        <article className="mb-20 relative z-10">
+        <article className="mb-24 relative z-10">
           <p className="thought-font text-3xl md:text-4xl lg:text-5xl text-stone-900 leading-[1.6] md:leading-[1.7] whitespace-pre-wrap break-words overflow-wrap-anywhere font-medium">
             {thought.content}
           </p>
         </article>
 
-        {/* Action bar - Strictly part of the bottom flow, never overlapping */}
-        <div className="mt-32 pt-12 border-t-2 border-stone-50 flex flex-wrap items-center gap-4 relative z-10">
-           <button 
-            onClick={handleCopy}
-            className={`flex items-center gap-3 px-10 py-4 rounded-full text-[11px] font-black uppercase tracking-widest transition-all border-2 ${isCopying ? 'bg-stone-50 border-stone-100 text-stone-400' : 'bg-white border-stone-100 text-stone-900 hover:border-stone-900 hover:bg-stone-50 shadow-md hover:shadow-lg'}`}
-           >
-              {isCopying ? 'Copied' : 'Copy Fragment'}
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-           </button>
-           
-           <button 
-            onClick={handleResonate}
-            disabled={hasResonated}
-            className={`flex items-center gap-3 px-10 py-4 rounded-full text-[11px] font-black uppercase tracking-widest transition-all border-2 ${hasResonated ? 'bg-stone-50 border-stone-100 text-stone-300 cursor-default' : 'bg-white border-stone-100 text-stone-900 hover:border-stone-900 hover:bg-stone-50 shadow-md hover:shadow-lg'}`}
-           >
-              {hasResonated ? 'Resonated' : 'Resonate'}
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill={hasResonated ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7 7 7-7 7z"/></svg>
-           </button>
-        </div>
+        {/* ACTIONS SECTION: Placed strictly at the end of the content flow */}
+        <section className="mt-32 pt-16 pb-24 border-t-2 border-stone-50 relative z-10">
+           <div className="flex flex-wrap items-center gap-4 mb-12">
+             <button 
+              onClick={handleCopy}
+              className={`flex items-center gap-3 px-10 py-4 rounded-full text-[11px] font-black uppercase tracking-widest transition-all border-2 ${isCopying ? 'bg-stone-50 border-stone-100 text-stone-400' : 'bg-white border-stone-100 text-stone-900 hover:border-stone-900 hover:bg-stone-50 shadow-sm hover:shadow-md'}`}
+             >
+                {isCopying ? 'Copied' : 'Copy Fragment'}
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+             </button>
+             
+             <button 
+              onClick={handleResonate}
+              disabled={hasResonated}
+              className={`flex items-center gap-3 px-10 py-4 rounded-full text-[11px] font-black uppercase tracking-widest transition-all border-2 ${hasResonated ? 'bg-stone-50 border-stone-100 text-stone-300 cursor-default' : 'bg-white border-stone-100 text-stone-900 hover:border-stone-900 hover:bg-stone-50 shadow-sm hover:shadow-md'}`}
+             >
+                {hasResonated ? 'Resonated' : 'Resonate'}
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill={hasResonated ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7 7 7-7 7z"/></svg>
+             </button>
+           </div>
 
-        <div className="mt-20 flex flex-wrap gap-4 relative z-10 opacity-40 hover:opacity-100 transition-opacity">
-          {thought.tags.map(tag => (
-            <span key={tag} className="text-[10px] font-black text-stone-400 uppercase tracking-[0.3em] cursor-default">
-              #{tag}
-            </span>
-          ))}
-        </div>
+           <div className="flex flex-wrap gap-4 opacity-40 hover:opacity-100 transition-opacity">
+            {thought.tags.map(tag => (
+              <span key={tag} className="text-[10px] font-black text-stone-400 uppercase tracking-[0.3em] cursor-default">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        </section>
       </div>
       <style>{`
         @keyframes readingEntry {
-          from { opacity: 0; filter: blur(15px); }
+          from { opacity: 0; filter: blur(20px); }
           to { opacity: 1; filter: blur(0); }
         }
         @keyframes pulseSlow {
-          0%, 100% { opacity: 0.5; transform: scale(1); }
-          50% { opacity: 0.8; transform: scale(1.05); }
+          0%, 100% { opacity: 0.4; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(1.05); }
         }
         .animate-reading-entry {
           animation: readingEntry 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -219,7 +229,7 @@ const Hero: React.FC<{
       <div className="mt-12 flex flex-wrap justify-center gap-2 max-w-2xl mx-auto px-4 fade-in">
         <button 
           onClick={() => onFilterChange('All')}
-          className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeFilter === 'All' ? 'bg-stone-900 text-white shadow-lg shadow-stone-900/10' : 'bg-stone-100/50 text-stone-400 hover:bg-stone-200'}`}
+          className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeFilter === 'All' ? 'bg-stone-900 text-white shadow-lg' : 'bg-stone-100 text-stone-400 hover:bg-stone-200'}`}
         >
           All
         </button>
@@ -227,7 +237,7 @@ const Hero: React.FC<{
           <button 
             key={cat}
             onClick={() => onFilterChange(cat)}
-            className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeFilter === cat ? 'bg-stone-900 text-white shadow-lg shadow-stone-900/10' : 'bg-stone-100/50 text-stone-400 hover:bg-stone-200'}`}
+            className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeFilter === cat ? 'bg-stone-900 text-white shadow-lg' : 'bg-stone-100 text-stone-400 hover:bg-stone-200'}`}
           >
             {cat}
           </button>
@@ -307,27 +317,32 @@ const App: React.FC = () => {
   const toastTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const savedThoughts = localStorage.getItem('tolu_thoughts');
-    const savedAuth = localStorage.getItem('tolu_auth');
-    
-    if (savedThoughts) {
-      try {
-        setThoughts(JSON.parse(savedThoughts));
-      } catch (e) {
-        console.error("Failed to load thoughts");
+    try {
+      const savedThoughts = localStorage.getItem('tolu_thoughts');
+      const savedAuth = localStorage.getItem('tolu_auth');
+      
+      if (savedThoughts) {
+        const parsed = JSON.parse(savedThoughts);
+        if (Array.isArray(parsed)) setThoughts(parsed);
       }
+      
+      if (savedAuth === 'true') {
+        setIsOwner(true);
+      }
+    } catch (e) {
+      console.error("Storage initialization error");
+    } finally {
+      setIsLoaded(true);
     }
-    
-    if (savedAuth === 'true') {
-      setIsOwner(true);
-    }
-    
-    setIsLoaded(true);
   }, []);
 
   useEffect(() => {
     if (isLoaded) {
-      localStorage.setItem('tolu_thoughts', JSON.stringify(thoughts));
+      try {
+        localStorage.setItem('tolu_thoughts', JSON.stringify(thoughts));
+      } catch (e) {
+        console.warn("Could not persist thoughts");
+      }
     }
   }, [thoughts, isLoaded]);
 
@@ -363,7 +378,18 @@ const App: React.FC = () => {
   const submitLogin = (e?: React.FormEvent) => {
     e?.preventDefault();
     const secret = loginKey.trim();
-    const validKey = process.env.ADMIN_KEY || 'admin';
+    
+    // Robust environment variable access for client-side usage
+    const getAdminKey = () => {
+      try {
+        const env = (typeof process !== 'undefined' && process.env) || {};
+        return env.ADMIN_KEY || 'admin';
+      } catch (e) {
+        return 'admin';
+      }
+    };
+    
+    const validKey = getAdminKey();
     
     if (secret === validKey) {
       setIsOwner(true);
@@ -382,15 +408,23 @@ const App: React.FC = () => {
     if (!isOwner) return;
     const hashtags = content.match(/#\w+/g)?.map(t => t.slice(1).toLowerCase()) || [];
     
+    // Fallback for crypto.randomUUID in older environments
+    const generateId = () => {
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+      return Math.random().toString(36).substring(2, 15);
+    };
+
     const newThought: Thought = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       content,
       category,
       timestamp: Date.now(),
       tags: [...new Set(hashtags)],
       resonates: 0
     };
-    setThoughts([newThought, ...thoughts]);
+    setThoughts(prev => [newThought, ...prev]);
   };
 
   const deleteThought = (id: string) => {
@@ -419,6 +453,7 @@ const App: React.FC = () => {
   };
 
   const filteredThoughts = useMemo(() => {
+    if (!Array.isArray(thoughts)) return [];
     if (activeFilter === 'All') return thoughts;
     return thoughts.filter(t => t.category === activeFilter);
   }, [thoughts, activeFilter]);
@@ -515,7 +550,11 @@ const App: React.FC = () => {
         )}
 
         <div className="px-6 space-y-16">
-          {filteredThoughts.length === 0 ? (
+          {!isLoaded ? (
+            <div className="flex justify-center py-20 opacity-20">
+              <div className="animate-pulse w-8 h-8 rounded-full border-2 border-stone-900 border-t-transparent animate-spin"></div>
+            </div>
+          ) : filteredThoughts.length === 0 ? (
             <div className="pt-12 pb-48 text-center fade-in">
               <div className="mb-10 flex justify-center opacity-[0.03] scale-150">
                 <svg width="100" height="100" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
