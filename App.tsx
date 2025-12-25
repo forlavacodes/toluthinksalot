@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Thought, Category } from './types';
 import ThoughtInput from './components/ThoughtInput';
 import ThoughtCard from './components/ThoughtCard';
-import AIAssistant from './components/AIAssistant';
 
 const TAGLINES = [
   "A Reservoir of Unfiltered Thoughts",
@@ -569,22 +568,19 @@ const App: React.FC = () => {
               <p className="text-[11px] text-stone-400 mt-12 uppercase tracking-[0.4em] font-black italic">Awaiting a new spark</p>
             </div>
           ) : (
-            <>
-              <div className="space-y-16">
-                {filteredThoughts.map(thought => (
-                  <ThoughtCard 
-                    key={thought.id} 
-                    thought={thought} 
-                    onDelete={deleteThought}
-                    onResonate={resonateThought}
-                    onShowToast={triggerToast}
-                    onOpenFullView={setSelectedThought}
-                    isOwner={isOwner}
-                  />
-                ))}
-              </div>
-              <AIAssistant thoughts={thoughts} />
-            </>
+            <div className="space-y-16">
+              {filteredThoughts.map(thought => (
+                <ThoughtCard 
+                  key={thought.id} 
+                  thought={thought} 
+                  onDelete={deleteThought}
+                  onResonate={resonateThought}
+                  onShowToast={triggerToast}
+                  onOpenFullView={setSelectedThought}
+                  isOwner={isOwner}
+                />
+              ))}
+            </div>
           )}
         </div>
       </main>

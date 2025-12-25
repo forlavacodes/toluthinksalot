@@ -2,18 +2,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Thought, AIReflection } from "../types";
 
-// Resilient API key retrieval for production environments
-const getApiKey = () => {
-  try {
-    // Check for process.env in a way that doesn't throw if process is undefined
-    const env = (typeof process !== 'undefined' && process.env) || {};
-    return env.API_KEY || "";
-  } catch (e) {
-    return "";
-  }
-};
-
-const ai = new GoogleGenAI({ apiKey: getApiKey() });
+// Always initialize with the direct process.env.API_KEY named parameter as per library rules
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const analyzeThoughts = async (thoughts: Thought[]): Promise<AIReflection | null> => {
   if (thoughts.length === 0) return null;
@@ -25,6 +15,7 @@ export const analyzeThoughts = async (thoughts: Thought[]): Promise<AIReflection
   `;
 
   try {
+    // Generate content using the recommended pattern and model for general text tasks
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
@@ -44,7 +35,8 @@ export const analyzeThoughts = async (thoughts: Thought[]): Promise<AIReflection
       }
     });
 
-    const text = response.text;
+    // Access the text property directly (it's a getter, not a method)
+    const text = response.text?.trim();
     if (!text) return null;
     return JSON.parse(text) as AIReflection;
   } catch (error) {

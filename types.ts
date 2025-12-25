@@ -11,6 +11,7 @@ export interface Thought {
   resonates: number;
 }
 
+// Added AIReflection interface to support AI analysis output structure
 export interface AIReflection {
   summary: string;
   themes: string[];
