@@ -32,8 +32,8 @@ const playSubtleChime = (ctx: AudioContext) => {
   filter.Q.setValueAtTime(0.7, now);
 
   masterGain.gain.setValueAtTime(0, now);
-  // Very long attack for a "swelling" soft start
-  masterGain.gain.linearRampToValueAtTime(0.08, now + 0.8);
+  // Swelling attack - increased from 0.08 to 0.25 for more presence
+  masterGain.gain.linearRampToValueAtTime(0.25, now + 0.8);
   // Extremely long decay for a lingering soft tail
   masterGain.gain.exponentialRampToValueAtTime(0.001, now + 4.0);
 
@@ -47,7 +47,7 @@ const playSubtleChime = (ctx: AudioContext) => {
     // Slight detune for a "lush" ethereal feel
     osc.detune.setValueAtTime(i * 2, now);
     
-    oscGain.gain.setValueAtTime(0.1, now);
+    oscGain.gain.setValueAtTime(0.15, now);
     
     osc.connect(oscGain);
     oscGain.connect(masterGain);
