@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom/client';
 
@@ -87,6 +86,16 @@ const ThoughtCard: React.FC<{
   hasResonated: boolean;
 }> = ({ thought, onDelete, onResonate, onOpen, isOwner, hasResonated }) => {
   const date = new Date(thought.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Using the user's specific domain for sharing links
+    const shareUrl = `https://toluthinksalot.vercel.app/status/${thought.id}`;
+    navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="group relative py-12 border-b border-stone-100 last:border-0 hover:bg-stone-50/50 transition-colors px-6 -mx-6 rounded-[2rem]">
@@ -100,14 +109,26 @@ const ThoughtCard: React.FC<{
             <span className="text-[10px] font-bold text-stone-300 uppercase tracking-widest">{date}</span>
           </div>
           
-          {isOwner && (
+          <div className="flex items-center gap-2">
             <button 
-              onClick={(e) => { e.stopPropagation(); onDelete(thought.id); }}
-              className="opacity-0 group-hover:opacity-100 p-2 text-stone-300 hover:text-red-500 transition-all"
+              onClick={handleShare}
+              className={`p-2 transition-all rounded-full flex items-center gap-2 group/share ${copied ? 'bg-stone-900 text-white' : 'text-stone-300 hover:text-stone-900 hover:bg-stone-100'}`}
+              title="Copy link"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+              </svg>
+              {copied && <span className="text-[8px] font-bold uppercase tracking-widest pr-1 animate-fade-in">Copied</span>}
             </button>
-          )}
+            {isOwner && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); onDelete(thought.id); }}
+                className="opacity-0 group-hover:opacity-100 p-2 text-stone-300 hover:text-red-500 transition-all"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+              </button>
+            )}
+          </div>
         </div>
 
         <p 
@@ -157,16 +178,29 @@ const App: React.FC = () => {
   const [selectedThought, setSelectedThought] = useState<Thought | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2200);
+  // Deep Link Handling
+  const parseUrlForPost = (currentThoughts: Thought[]) => {
+    const path = window.location.pathname;
+    const match = path.match(/\/status\/([a-z0-9]+)/);
+    if (match && match[1]) {
+      const postId = match[1];
+      const thought = currentThoughts.find(t => t.id === postId);
+      if (thought) {
+        setSelectedThought(thought);
+      }
+    } else if (path === '/') {
+      setSelectedThought(null);
+    }
+  };
 
+  useEffect(() => {
+    // Initial data load
     const saved = localStorage.getItem('tolu_thoughts');
+    let loadedThoughts: Thought[] = [];
     if (saved) {
       try {
-        setThoughts(JSON.parse(saved));
+        loadedThoughts = JSON.parse(saved);
+        setThoughts(loadedThoughts);
       } catch (e) {
         console.error("Failed to load thoughts", e);
       }
@@ -182,8 +216,25 @@ const App: React.FC = () => {
     }
 
     if (localStorage.getItem('tolu_auth') === 'true') setIsOwner(true);
+
+    // Initial routing
+    parseUrlForPost(loadedThoughts);
+
+    // History handling
+    const handlePopState = () => {
+      parseUrlForPost(loadedThoughts);
+    };
+    window.addEventListener('popstate', handlePopState);
+
+    // Simulate loading screen
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2200);
     
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, []);
 
   useEffect(() => {
@@ -227,6 +278,16 @@ const App: React.FC = () => {
     }
   };
 
+  const openThought = (thought: Thought) => {
+    setSelectedThought(thought);
+    window.history.pushState({ postId: thought.id }, '', `/status/${thought.id}`);
+  };
+
+  const closeThought = () => {
+    setSelectedThought(null);
+    window.history.pushState({}, '', '/');
+  };
+
   const filteredThoughts = useMemo(() => 
     activeFilter === 'All' ? thoughts : thoughts.filter(t => t.category === activeFilter)
   , [thoughts, activeFilter]);
@@ -264,8 +325,8 @@ const App: React.FC = () => {
         {selectedThought && (
           <div className="fixed inset-0 z-[60] bg-[#fcfaf7] overflow-y-auto px-6 py-24 md:py-48 animate-fade-in paper-texture">
             <button 
-              onClick={() => setSelectedThought(null)}
-              className="fixed top-8 left-8 md:top-12 md:left-12 w-14 h-14 bg-white border border-stone-200 rounded-full flex items-center justify-center hover:bg-stone-900 hover:text-white transition-all shadow-xl active:scale-90"
+              onClick={closeThought}
+              className="fixed top-8 left-8 md:top-12 md:left-12 w-14 h-14 bg-white border border-stone-200 rounded-full flex items-center justify-center hover:bg-stone-900 hover:text-white transition-all shadow-xl active:scale-90 group"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
             </button>
@@ -325,7 +386,7 @@ const App: React.FC = () => {
                   thought={t} 
                   onDelete={deleteThought} 
                   onResonate={resonate} 
-                  onOpen={setSelectedThought}
+                  onOpen={openThought}
                   isOwner={isOwner} 
                   hasResonated={reactedIds.includes(t.id)}
                 />
