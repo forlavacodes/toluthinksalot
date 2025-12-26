@@ -32,6 +32,55 @@ const Logo: React.FC<{ size?: 'sm' | 'md' | 'lg', className?: string }> = ({ siz
   );
 };
 
+const ScrollToTopButton: React.FC = () => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const toggleVisibility = () => {
+      if (window.pageYOffset > 400) {
+        setIsVisible(true);
+      } else {
+        setIsVisible(false);
+      }
+    };
+
+    window.addEventListener('scroll', toggleVisibility);
+    return () => window.removeEventListener('scroll', toggleVisibility);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  };
+
+  return (
+    <button
+      onClick={scrollToTop}
+      className={`fixed bottom-8 right-8 z-40 w-14 h-14 bg-stone-900 text-white rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 transform ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
+      } hover:scale-110 active:scale-90 group`}
+      aria-label="Scroll to top"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="group-hover:-translate-y-1 transition-transform"
+      >
+        <path d="m18 15-6-6-6 6" />
+      </svg>
+    </button>
+  );
+};
+
 const LoadingScreen: React.FC = () => {
   return (
     <div className="fixed inset-0 z-[100] bg-[#fcfaf7] paper-texture flex flex-col items-center justify-center transition-opacity duration-700">
@@ -106,15 +155,6 @@ const ThoughtCard: React.FC<{
   hasResonated: boolean;
 }> = ({ thought, onDelete, onResonate, onOpen, onImageShare, isOwner, hasResonated }) => {
   const date = new Date(thought.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
-  const [copied, setCopied] = useState(false);
-
-  const handleLinkShare = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const shareUrl = `https://toluthinksalot.vercel.app/status/${thought.id}`;
-    navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   return (
     <div className="group relative py-12 border-b border-stone-100 last:border-0 hover:bg-stone-50/50 transition-colors px-6 -mx-6 rounded-[2rem]">
@@ -131,27 +171,18 @@ const ThoughtCard: React.FC<{
           <div className="flex items-center gap-1">
             <button 
               onClick={(e) => { e.stopPropagation(); onImageShare(thought); }}
-              className="p-2 text-stone-300 hover:text-stone-900 hover:bg-stone-100 rounded-full transition-all"
+              className="px-4 py-2 bg-white border border-stone-100 text-stone-300 hover:text-stone-900 hover:border-stone-900 rounded-full transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
               title="Share as Image"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
               </svg>
-            </button>
-            <button 
-              onClick={handleLinkShare}
-              className={`p-2 transition-all rounded-full flex items-center gap-2 group/share ${copied ? 'bg-stone-900 text-white' : 'text-stone-300 hover:text-stone-900 hover:bg-stone-100'}`}
-              title="Copy link"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
-              </svg>
-              {copied && <span className="text-[8px] font-bold uppercase tracking-widest pr-1 animate-fade-in">Copied</span>}
+              Save Image
             </button>
             {isOwner && (
               <button 
                 onClick={(e) => { e.stopPropagation(); onDelete(thought.id); }}
-                className="opacity-0 group-hover:opacity-100 p-2 text-stone-300 hover:text-red-500 transition-all"
+                className="opacity-0 group-hover:opacity-100 p-2 text-stone-300 hover:text-red-500 transition-all ml-2"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
               </button>
@@ -362,6 +393,16 @@ const App: React.FC = () => {
     activeFilter === 'All' ? thoughts : thoughts.filter(t => t.category === activeFilter)
   , [thoughts, activeFilter]);
 
+  // Helper to determine font size for share image
+  const getDynamicFontSize = (content: string) => {
+    const len = content.length;
+    if (len < 50) return 'text-8xl';
+    if (len < 120) return 'text-7xl';
+    if (len < 250) return 'text-5xl';
+    if (len < 400) return 'text-4xl';
+    return 'text-3xl';
+  };
+
   return (
     <>
       {isLoading && <LoadingScreen />}
@@ -371,9 +412,14 @@ const App: React.FC = () => {
         <div className="fixed -left-[2000px] top-0 pointer-events-none">
           <div 
             ref={captureRef}
-            className="w-[1080px] h-[1080px] bg-[#fcfaf7] paper-texture flex flex-col p-24 justify-between border-[20px] border-white shadow-inner"
+            className="w-[1080px] h-[1080px] bg-[#fcfaf7] paper-texture flex flex-col p-24 justify-between border-[16px] border-white shadow-inner relative"
           >
-            <div className="space-y-12">
+             {/* Decorative watermark */}
+             <div className="absolute top-12 left-24 text-[300px] leading-none text-stone-100 opacity-50 thought-font select-none pointer-events-none">
+              “
+             </div>
+
+            <div className="space-y-12 relative z-10">
               <div className="flex items-center gap-6">
                 <span className="text-xl font-black uppercase tracking-[0.4em] text-stone-900 bg-stone-100 px-6 py-2 rounded-full">
                   {capturing.category}
@@ -382,20 +428,21 @@ const App: React.FC = () => {
                   {new Date(capturing.timestamp).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })}
                 </span>
               </div>
-              <p className="thought-font text-7xl text-stone-900 leading-[1.2] whitespace-pre-wrap italic">
-                "{capturing.content}"
+              <p className={`thought-font text-stone-900 leading-[1.3] whitespace-pre-wrap italic font-medium ${getDynamicFontSize(capturing.content)}`}>
+                {capturing.content}
               </p>
             </div>
-            <div className="flex items-center justify-between border-t border-stone-200 pt-16">
+
+            <div className="flex items-center justify-between border-t border-stone-200 pt-16 relative z-10">
               <div className="flex items-center gap-6">
                 <Logo size="md" />
                 <div className="space-y-1">
-                  <h3 className="heading-font text-3xl font-black tracking-tighter text-stone-900">Tolu Says</h3>
-                  <p className="text-xl font-bold uppercase tracking-[0.2em] text-stone-300">toluthinksalot.vercel.app</p>
+                  <h3 className="heading-font text-3xl font-black tracking-tighter text-stone-900 leading-none">RTTS</h3>
+                  <p className="text-lg font-bold uppercase tracking-[0.2em] text-stone-300">ToluThinksALot.app</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4 text-stone-300">
-                <span className="text-xl font-black uppercase tracking-widest">{capturing.resonates} RESONATES</span>
+              <div className="flex items-center gap-4 text-stone-200">
+                <span className="text-xl font-black uppercase tracking-widest">{capturing.resonates} Resonates</span>
               </div>
             </div>
           </div>
@@ -455,16 +502,16 @@ const App: React.FC = () => {
                   <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest">{selectedThought.resonates} resonates</span>
                 </div>
               </div>
-              <p className="thought-font text-4xl md:text-5xl lg:text-6xl text-stone-900 leading-[1.3] md:leading-[1.2] whitespace-pre-wrap">
+              <p className="thought-font text-4xl md:text-5xl lg:text-6xl text-stone-900 leading-[1.3] md:leading-[1.2] whitespace-pre-wrap italic">
                 {selectedThought.content}
               </p>
               <div className="pt-12 flex justify-start">
                  <button 
                     onClick={() => handleImageShare(selectedThought)}
-                    className="flex items-center gap-3 bg-stone-900 text-white px-8 py-4 rounded-full font-bold uppercase tracking-widest text-[11px] shadow-xl hover:scale-105 transition-all active:scale-95"
+                    className="flex items-center gap-3 bg-stone-900 text-white px-10 py-5 rounded-full font-bold uppercase tracking-[0.2em] text-[11px] shadow-2xl hover:scale-105 transition-all active:scale-95"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                    Share as Image
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                    Save Memory Card
                   </button>
               </div>
             </div>
@@ -524,13 +571,16 @@ const App: React.FC = () => {
 
         <footer className="py-32 text-center border-t border-stone-100 mt-auto bg-stone-50/30">
           <div className="max-w-2xl mx-auto px-6 space-y-10 flex flex-col items-center">
-            <Logo size="sm" className="mb-4 opacity-50" />
+            <div className="flex items-center gap-4">
+               <Logo size="sm" className="opacity-50" />
+               <span className="heading-font text-xl font-black text-stone-300 tracking-tighter">RTTS Signature</span>
+            </div>
             <div className="space-y-4">
               <p className="text-[11px] font-black uppercase tracking-[0.5em] text-stone-300">Curated Fragments</p>
               <div className="flex flex-wrap justify-center gap-8 md:gap-12">
-                <a href="https://instagram.com/direct_strt" target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-stone-900 transition-colors text-[10px] font-black uppercase tracking-[0.2em]">Instagram</a>
-                <a href="https://twitter.com/direct_strt" target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-stone-900 transition-colors text-[10px] font-black uppercase tracking-[0.2em]">Twitter</a>
-                <a href="https://tiktok.com/@direct_strt" target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-stone-900 transition-colors text-[10px] font-black uppercase tracking-[0.2em]">TikTok</a>
+                <a href="https://instagram.com/" target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-stone-900 transition-colors text-[10px] font-black uppercase tracking-[0.2em]">Instagram</a>
+                <a href="https://twitter.com/" target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-stone-900 transition-colors text-[10px] font-black uppercase tracking-[0.2em]">Twitter</a>
+                <a href="https://tiktok.com/" target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-stone-900 transition-colors text-[10px] font-black uppercase tracking-[0.2em]">TikTok</a>
               </div>
             </div>
             <div className="pt-12 flex items-center justify-center gap-3">
@@ -545,6 +595,8 @@ const App: React.FC = () => {
             </div>
           </div>
         </footer>
+        
+        <ScrollToTopButton />
       </div>
     </>
   );
