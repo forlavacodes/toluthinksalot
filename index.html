@@ -20,6 +20,7 @@
         color: #1a1a1a;
         -webkit-font-smoothing: antialiased;
         letter-spacing: -0.01em;
+        overflow-x: hidden;
       }
       .thought-font {
         font-family: 'Newsreader', serif;
@@ -32,20 +33,26 @@
       .paper-texture {
         background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png");
       }
+      
+      /* Enhanced Scroll Animations */
+      .reveal-hidden {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      .reveal-visible {
+        opacity: 1;
+        transform: translateY(0);
+        transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
       .fade-in {
         animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      }
-      .fade-out {
-        animation: fadeOut 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
       @keyframes fadeIn {
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
       }
-      @keyframes fadeOut {
-        from { opacity: 1; }
-        to { opacity: 0; pointer-events: none; }
-      }
+      
       .pulse-soft {
         animation: pulseSoft 2.5s ease-in-out infinite;
       }
@@ -64,13 +71,13 @@
         to { transform: scaleX(1); }
       }
       ::-webkit-scrollbar {
-        width: 4px;
+        width: 6px;
       }
       ::-webkit-scrollbar-track {
         background: transparent;
       }
       ::-webkit-scrollbar-thumb {
-        background: #e2e2e2;
+        background: #dcd9d6;
         border-radius: 10px;
       }
       input:focus, textarea:focus {
@@ -79,6 +86,11 @@
       ::selection {
         background: #e5e7eb;
         color: #111827;
+      }
+      
+      /* Smooth scrolling */
+      html {
+        scroll-behavior: smooth;
       }
     </style>
     <script type="importmap">

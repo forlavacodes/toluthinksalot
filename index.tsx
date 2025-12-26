@@ -16,6 +16,31 @@ interface Thought {
 
 const CATEGORIES: Category[] = ['Deep thoughts', 'About HER', 'Poetic', 'Random Opinion', 'Politics', 'Humour'];
 
+// --- Custom Hooks ---
+
+const useIntersectionObserver = (options: IntersectionObserverInit) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsVisible(true);
+        observer.unobserve(entry.target);
+      }
+    }, options);
+
+    const target = containerRef.current;
+    if (target) observer.observe(target);
+
+    return () => {
+      if (target) observer.unobserve(target);
+    };
+  }, [options]);
+
+  return [containerRef, isVisible] as const;
+};
+
 // --- Sub-Components ---
 
 const Logo: React.FC<{ size?: 'sm' | 'md' | 'lg', className?: string }> = ({ size = 'md', className = '' }) => {
@@ -153,11 +178,19 @@ const ThoughtCard: React.FC<{
   onImageShare: (thought: Thought) => void;
   isOwner: boolean;
   hasResonated: boolean;
-}> = ({ thought, onDelete, onResonate, onOpen, onImageShare, isOwner, hasResonated }) => {
+  delay?: number;
+}> = ({ thought, onDelete, onResonate, onOpen, onImageShare, isOwner, hasResonated, delay = 0 }) => {
   const date = new Date(thought.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
+  const [containerRef, isVisible] = useIntersectionObserver({ threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
 
   return (
-    <div className="group relative py-12 border-b border-stone-100 last:border-0 hover:bg-stone-50/50 transition-colors px-6 -mx-6 rounded-[2rem]">
+    <div 
+      ref={containerRef}
+      style={{ transitionDelay: `${delay}ms` }}
+      className={`group relative py-12 border-b border-stone-100 last:border-0 hover:bg-stone-50/50 px-6 -mx-6 rounded-[2rem] ${
+        isVisible ? 'reveal-visible' : 'reveal-hidden'
+      }`}
+    >
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -237,8 +270,19 @@ const App: React.FC = () => {
   const [selectedThought, setSelectedThought] = useState<Thought | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [capturing, setCapturing] = useState<Thought | null>(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
   
   const captureRef = useRef<HTMLDivElement>(null);
+
+  // Scroll Tracking for Parallax
+  useEffect(() => {
+    const handleScroll = () => {
+      const progress = Math.min(window.scrollY / 400, 1);
+      setScrollProgress(progress);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Deep Link Handling
   const parseUrlForPost = (currentThoughts: Thought[]) => {
@@ -349,20 +393,18 @@ const App: React.FC = () => {
 
   const handleImageShare = async (thought: Thought) => {
     setCapturing(thought);
-    // Give react time to render the capture template
     setTimeout(async () => {
       if (!captureRef.current) return;
       try {
         const canvas = await html2canvas(captureRef.current, {
           backgroundColor: '#fcfaf7',
-          scale: 3, // High DPI
+          scale: 3,
           useCORS: true,
           logging: false,
         });
         
         const dataUrl = canvas.toDataURL('image/png');
         
-        // If navigator.share is available and handles files (usually mobile)
         if (navigator.share && navigator.canShare) {
           const blob = await (await fetch(dataUrl)).blob();
           const file = new File([blob], `tolu-says-${thought.id}.png`, { type: 'image/png' });
@@ -377,7 +419,6 @@ const App: React.FC = () => {
           }
         }
 
-        // Fallback: Automatic download
         const link = document.createElement('a');
         link.download = `tolu-says-${thought.id}.png`;
         link.href = dataUrl;
@@ -393,7 +434,6 @@ const App: React.FC = () => {
     activeFilter === 'All' ? thoughts : thoughts.filter(t => t.category === activeFilter)
   , [thoughts, activeFilter]);
 
-  // Helper to determine font size for share image
   const getDynamicFontSize = (content: string) => {
     const len = content.length;
     if (len < 50) return 'text-8xl';
@@ -414,7 +454,6 @@ const App: React.FC = () => {
             ref={captureRef}
             className="w-[1080px] h-[1080px] bg-[#fcfaf7] paper-texture flex flex-col p-24 justify-between border-[16px] border-white shadow-inner relative"
           >
-             {/* Decorative watermark */}
              <div className="absolute top-12 left-24 text-[300px] leading-none text-stone-100 opacity-50 thought-font select-none pointer-events-none">
               “
              </div>
@@ -518,7 +557,14 @@ const App: React.FC = () => {
           </div>
         )}
 
-        <header className="pt-32 pb-20 text-center max-w-4xl mx-auto w-full px-6 flex flex-col items-center">
+        <header 
+          className="pt-32 pb-20 text-center max-w-4xl mx-auto w-full px-6 flex flex-col items-center transition-all duration-700 ease-out"
+          style={{ 
+            opacity: 1 - scrollProgress * 0.8,
+            transform: `translateY(${scrollProgress * 40}px) scale(${1 - scrollProgress * 0.05})`,
+            filter: `blur(${scrollProgress * 2}px)`
+          }}
+        >
           <button onClick={resetAll} className="mb-12 hover:scale-110 active:scale-95 transition-all">
             <Logo size="lg" />
           </button>
@@ -553,7 +599,7 @@ const App: React.FC = () => {
                 <p className="thought-font text-4xl text-stone-200 italic font-light">"Silence is just a thought awaiting its turn."</p>
               </div>
             ) : (
-              filteredThoughts.map(t => (
+              filteredThoughts.map((t, index) => (
                 <ThoughtCard 
                   key={t.id} 
                   thought={t} 
@@ -563,6 +609,7 @@ const App: React.FC = () => {
                   onImageShare={handleImageShare}
                   isOwner={isOwner} 
                   hasResonated={reactedIds.includes(t.id)}
+                  delay={index < 5 ? index * 80 : 0} // Only stagger initial load
                 />
               ))
             )}
