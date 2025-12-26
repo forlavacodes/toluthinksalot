@@ -447,33 +447,32 @@ const App: React.FC = () => {
     <>
       {isLoading && <LoadingScreen />}
       
-      {/* Refined Share Card Template for Capture */}
+      {/* Refined Share Card Template - strictly requested elements only */}
       {capturing && (
         <div className="fixed -left-[2000px] top-0 pointer-events-none">
           <div 
             ref={captureRef}
             className="w-[1200px] h-[1200px] bg-[#fcfaf7] paper-texture flex flex-col p-28 justify-between relative overflow-hidden"
           >
-            {/* Category at Top Left */}
+            {/* 1. Category */}
             <div className="relative z-10">
               <span className="text-2xl font-black uppercase tracking-[0.5em] text-stone-900 bg-stone-100/80 px-8 py-3 rounded-full">
                 {capturing.category}
               </span>
             </div>
 
-            {/* Main Content (The Text) */}
+            {/* 2. Text (Main Content) */}
             <div className="relative z-10 flex-grow flex flex-col justify-center py-12">
               <p className={`thought-font text-stone-900 whitespace-pre-wrap italic font-semibold ${getDynamicFontSize(capturing.content)}`}>
                 {capturing.content}
               </p>
             </div>
 
-            {/* Bottom Meta Section */}
+            {/* 3 & 4. Branding and Date */}
             <div className="relative z-10 flex flex-col gap-10">
               <div className="flex items-end justify-between border-t-[3px] border-stone-900 pt-12">
-                <div className="space-y-1">
+                <div>
                   <h3 className="heading-font text-5xl font-black tracking-tighter text-stone-900 leading-none">RTTS - Toluthinksalot</h3>
-                  <p className="text-xl font-bold uppercase tracking-[0.3em] text-stone-300">Archive Signature</p>
                 </div>
                 
                 <div className="text-right">
@@ -483,8 +482,8 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* Site Link as Caption at the very bottom */}
-              <div className="text-center pt-8 opacity-50">
+              {/* 5. Link to site as caption */}
+              <div className="text-center pt-8 opacity-40">
                 <p className="text-xl font-bold uppercase tracking-[0.8em] text-stone-400">ToluThinksALot.app</p>
               </div>
             </div>
@@ -497,7 +496,7 @@ const App: React.FC = () => {
         <div className="fixed inset-0 z-[110] bg-stone-900/40 backdrop-blur-sm flex items-center justify-center animate-fade-in">
           <div className="bg-white p-12 rounded-[3rem] text-center space-y-6 shadow-2xl scale-in">
             <div className="w-12 h-12 border-4 border-stone-100 border-t-stone-900 rounded-full animate-spin mx-auto" />
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">Generating Card</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">Generating Fragment Card</p>
           </div>
         </div>
       )}
@@ -505,7 +504,7 @@ const App: React.FC = () => {
       <div className={`min-h-screen flex flex-col ${isLoading ? 'opacity-0' : 'animate-fade-in'}`}>
         {showLogin && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 backdrop-blur-md p-6 animate-fade-in">
-            <form onSubmit={handleLogin} className="bg-white p-12 rounded-[3rem] shadow-2xl w-full max-w-sm space-y-8">
+            <form onSubmit={handleLogin} className="bg-white p-12 rounded-[3rem] shadow-2xl w-full max-sm space-y-8">
               <div className="space-y-2">
                 <h2 className="heading-font text-3xl font-bold tracking-tighter">Identity check</h2>
                 <p className="text-[10px] uppercase tracking-[0.3em] font-black text-stone-400">Restricted archive access</p>
@@ -629,9 +628,9 @@ const App: React.FC = () => {
             <div className="space-y-4">
               <p className="text-[11px] font-black uppercase tracking-[0.5em] text-stone-300">Curated Fragments</p>
               <div className="flex flex-wrap justify-center gap-8 md:gap-12">
-                <a href="https://instagram.com/direct_strt_" target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-stone-900 transition-colors text-[10px] font-black uppercase tracking-[0.2em]">Instagram</a>
-                <a href="https://twitter.com/direct_strt_" target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-stone-900 transition-colors text-[10px] font-black uppercase tracking-[0.2em]">Twitter</a>
-                <a href="https://tiktok.com/@direct_strt_" target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-stone-900 transition-colors text-[10px] font-black uppercase tracking-[0.2em]">TikTok</a>
+                <a href="https://instagram.com/direct_strt0" target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-stone-900 transition-colors text-[10px] font-black uppercase tracking-[0.2em]">Instagram</a>
+                <a href="https://twitter.com/direct_strt0" target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-stone-900 transition-colors text-[10px] font-black uppercase tracking-[0.2em]">Twitter</a>
+                <a href="https://tiktok.com/@direct_strt0" target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-stone-900 transition-colors text-[10px] font-black uppercase tracking-[0.2em]">TikTok</a>
               </div>
             </div>
             <div className="pt-12 flex items-center justify-center gap-3">
