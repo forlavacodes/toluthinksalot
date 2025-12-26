@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
+import html2canvas from 'html2canvas';
 
 // --- Types ---
 type Category = 'Deep thoughts' | 'About HER' | 'Poetic' | 'Random Opinion' | 'Politics' | 'Humour';
@@ -16,12 +18,29 @@ const CATEGORIES: Category[] = ['Deep thoughts', 'About HER', 'Poetic', 'Random 
 
 // --- Sub-Components ---
 
+const Logo: React.FC<{ size?: 'sm' | 'md' | 'lg', className?: string }> = ({ size = 'md', className = '' }) => {
+  const dimensions = {
+    sm: 'w-8 h-8 text-sm',
+    md: 'w-12 h-12 text-xl',
+    lg: 'w-20 h-20 text-4xl'
+  };
+
+  return (
+    <div className={`${dimensions[size]} bg-stone-900 text-white rounded-[30%] flex items-center justify-center font-black heading-font select-none shadow-lg shadow-stone-900/10 ${className}`}>
+      T
+    </div>
+  );
+};
+
 const LoadingScreen: React.FC = () => {
   return (
     <div className="fixed inset-0 z-[100] bg-[#fcfaf7] paper-texture flex flex-col items-center justify-center transition-opacity duration-700">
-      <div className="max-w-xs w-full px-12 space-y-8 text-center">
-        <h1 className="heading-font text-3xl font-black text-stone-900 tracking-tighter pulse-soft">
-          RTTS
+      <div className="max-w-xs w-full px-12 space-y-8 text-center flex flex-col items-center">
+        <div className="pulse-soft">
+          <Logo size="lg" />
+        </div>
+        <h1 className="heading-font text-2xl font-black text-stone-900 tracking-tighter">
+          Tolu Says
         </h1>
         <div className="w-full h-[1px] bg-stone-100 overflow-hidden relative">
           <div className="writing-line absolute inset-0"></div>
@@ -82,15 +101,15 @@ const ThoughtCard: React.FC<{
   onDelete: (id: string) => void; 
   onResonate: (id: string) => void;
   onOpen: (thought: Thought) => void;
+  onImageShare: (thought: Thought) => void;
   isOwner: boolean;
   hasResonated: boolean;
-}> = ({ thought, onDelete, onResonate, onOpen, isOwner, hasResonated }) => {
+}> = ({ thought, onDelete, onResonate, onOpen, onImageShare, isOwner, hasResonated }) => {
   const date = new Date(thought.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
   const [copied, setCopied] = useState(false);
 
-  const handleShare = (e: React.MouseEvent) => {
+  const handleLinkShare = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Using the user's specific domain for sharing links
     const shareUrl = `https://toluthinksalot.vercel.app/status/${thought.id}`;
     navigator.clipboard.writeText(shareUrl);
     setCopied(true);
@@ -109,9 +128,18 @@ const ThoughtCard: React.FC<{
             <span className="text-[10px] font-bold text-stone-300 uppercase tracking-widest">{date}</span>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button 
-              onClick={handleShare}
+              onClick={(e) => { e.stopPropagation(); onImageShare(thought); }}
+              className="p-2 text-stone-300 hover:text-stone-900 hover:bg-stone-100 rounded-full transition-all"
+              title="Share as Image"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+              </svg>
+            </button>
+            <button 
+              onClick={handleLinkShare}
               className={`p-2 transition-all rounded-full flex items-center gap-2 group/share ${copied ? 'bg-stone-900 text-white' : 'text-stone-300 hover:text-stone-900 hover:bg-stone-100'}`}
               title="Copy link"
             >
@@ -177,6 +205,9 @@ const App: React.FC = () => {
   const [loginKey, setLoginKey] = useState('');
   const [selectedThought, setSelectedThought] = useState<Thought | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [capturing, setCapturing] = useState<Thought | null>(null);
+  
+  const captureRef = useRef<HTMLDivElement>(null);
 
   // Deep Link Handling
   const parseUrlForPost = (currentThoughts: Thought[]) => {
@@ -194,7 +225,6 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    // Initial data load
     const saved = localStorage.getItem('tolu_thoughts');
     let loadedThoughts: Thought[] = [];
     if (saved) {
@@ -216,20 +246,12 @@ const App: React.FC = () => {
     }
 
     if (localStorage.getItem('tolu_auth') === 'true') setIsOwner(true);
-
-    // Initial routing
     parseUrlForPost(loadedThoughts);
 
-    // History handling
-    const handlePopState = () => {
-      parseUrlForPost(loadedThoughts);
-    };
+    const handlePopState = () => parseUrlForPost(loadedThoughts);
     window.addEventListener('popstate', handlePopState);
 
-    // Simulate loading screen
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2200);
+    const timer = setTimeout(() => setIsLoading(false), 2200);
     
     return () => {
       clearTimeout(timer);
@@ -288,6 +310,54 @@ const App: React.FC = () => {
     window.history.pushState({}, '', '/');
   };
 
+  const resetAll = () => {
+    setActiveFilter('All');
+    closeThought();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleImageShare = async (thought: Thought) => {
+    setCapturing(thought);
+    // Give react time to render the capture template
+    setTimeout(async () => {
+      if (!captureRef.current) return;
+      try {
+        const canvas = await html2canvas(captureRef.current, {
+          backgroundColor: '#fcfaf7',
+          scale: 3, // High DPI
+          useCORS: true,
+          logging: false,
+        });
+        
+        const dataUrl = canvas.toDataURL('image/png');
+        
+        // If navigator.share is available and handles files (usually mobile)
+        if (navigator.share && navigator.canShare) {
+          const blob = await (await fetch(dataUrl)).blob();
+          const file = new File([blob], `tolu-says-${thought.id}.png`, { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: 'Random Things Tolu Says',
+              text: `"${thought.content.substring(0, 50)}..."`
+            });
+            setCapturing(null);
+            return;
+          }
+        }
+
+        // Fallback: Automatic download
+        const link = document.createElement('a');
+        link.download = `tolu-says-${thought.id}.png`;
+        link.href = dataUrl;
+        link.click();
+      } catch (err) {
+        console.error('Image generation failed', err);
+      }
+      setCapturing(null);
+    }, 100);
+  };
+
   const filteredThoughts = useMemo(() => 
     activeFilter === 'All' ? thoughts : thoughts.filter(t => t.category === activeFilter)
   , [thoughts, activeFilter]);
@@ -296,8 +366,53 @@ const App: React.FC = () => {
     <>
       {isLoading && <LoadingScreen />}
       
+      {/* Hidden Share Card Template for Capture */}
+      {capturing && (
+        <div className="fixed -left-[2000px] top-0 pointer-events-none">
+          <div 
+            ref={captureRef}
+            className="w-[1080px] h-[1080px] bg-[#fcfaf7] paper-texture flex flex-col p-24 justify-between border-[20px] border-white shadow-inner"
+          >
+            <div className="space-y-12">
+              <div className="flex items-center gap-6">
+                <span className="text-xl font-black uppercase tracking-[0.4em] text-stone-900 bg-stone-100 px-6 py-2 rounded-full">
+                  {capturing.category}
+                </span>
+                <span className="text-xl font-bold text-stone-300 uppercase tracking-widest">
+                  {new Date(capturing.timestamp).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })}
+                </span>
+              </div>
+              <p className="thought-font text-7xl text-stone-900 leading-[1.2] whitespace-pre-wrap italic">
+                "{capturing.content}"
+              </p>
+            </div>
+            <div className="flex items-center justify-between border-t border-stone-200 pt-16">
+              <div className="flex items-center gap-6">
+                <Logo size="md" />
+                <div className="space-y-1">
+                  <h3 className="heading-font text-3xl font-black tracking-tighter text-stone-900">Tolu Says</h3>
+                  <p className="text-xl font-bold uppercase tracking-[0.2em] text-stone-300">toluthinksalot.vercel.app</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 text-stone-300">
+                <span className="text-xl font-black uppercase tracking-widest">{capturing.resonates} RESONATES</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Capture Overlay */}
+      {capturing && (
+        <div className="fixed inset-0 z-[110] bg-stone-900/40 backdrop-blur-sm flex items-center justify-center animate-fade-in">
+          <div className="bg-white p-12 rounded-[3rem] text-center space-y-6 shadow-2xl scale-in">
+            <div className="w-12 h-12 border-4 border-stone-100 border-t-stone-900 rounded-full animate-spin mx-auto" />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">Rendering high-res fragment</p>
+          </div>
+        </div>
+      )}
+
       <div className={`min-h-screen flex flex-col ${isLoading ? 'opacity-0' : 'animate-fade-in'}`}>
-        {/* Verification Modal */}
         {showLogin && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 backdrop-blur-md p-6 animate-fade-in">
             <form onSubmit={handleLogin} className="bg-white p-12 rounded-[3rem] shadow-2xl w-full max-w-sm space-y-8">
@@ -321,7 +436,6 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Immersive Reading View */}
         {selectedThought && (
           <div className="fixed inset-0 z-[60] bg-[#fcfaf7] overflow-y-auto px-6 py-24 md:py-48 animate-fade-in paper-texture">
             <button 
@@ -344,11 +458,23 @@ const App: React.FC = () => {
               <p className="thought-font text-4xl md:text-5xl lg:text-6xl text-stone-900 leading-[1.3] md:leading-[1.2] whitespace-pre-wrap">
                 {selectedThought.content}
               </p>
+              <div className="pt-12 flex justify-start">
+                 <button 
+                    onClick={() => handleImageShare(selectedThought)}
+                    className="flex items-center gap-3 bg-stone-900 text-white px-8 py-4 rounded-full font-bold uppercase tracking-widest text-[11px] shadow-xl hover:scale-105 transition-all active:scale-95"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                    Share as Image
+                  </button>
+              </div>
             </div>
           </div>
         )}
 
-        <header className="pt-32 pb-20 text-center max-w-4xl mx-auto w-full px-6">
+        <header className="pt-32 pb-20 text-center max-w-4xl mx-auto w-full px-6 flex flex-col items-center">
+          <button onClick={resetAll} className="mb-12 hover:scale-110 active:scale-95 transition-all">
+            <Logo size="lg" />
+          </button>
           <h1 className="heading-font text-6xl md:text-8xl font-black text-stone-900 mb-12 tracking-tighter leading-[0.9]">
             Random Things<br/>Tolu Says
           </h1>
@@ -387,6 +513,7 @@ const App: React.FC = () => {
                   onDelete={deleteThought} 
                   onResonate={resonate} 
                   onOpen={openThought}
+                  onImageShare={handleImageShare}
                   isOwner={isOwner} 
                   hasResonated={reactedIds.includes(t.id)}
                 />
@@ -396,7 +523,8 @@ const App: React.FC = () => {
         </main>
 
         <footer className="py-32 text-center border-t border-stone-100 mt-auto bg-stone-50/30">
-          <div className="max-w-2xl mx-auto px-6 space-y-10">
+          <div className="max-w-2xl mx-auto px-6 space-y-10 flex flex-col items-center">
+            <Logo size="sm" className="mb-4 opacity-50" />
             <div className="space-y-4">
               <p className="text-[11px] font-black uppercase tracking-[0.5em] text-stone-300">Curated Fragments</p>
               <div className="flex flex-wrap justify-center gap-8 md:gap-12">
