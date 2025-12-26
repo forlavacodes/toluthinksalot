@@ -197,8 +197,6 @@ const ThoughtCard: React.FC<{
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-300 group-hover:text-stone-900 transition-colors">
               {thought.category}
             </span>
-            <span className="w-1 h-1 rounded-full bg-stone-200" />
-            <span className="text-[10px] font-bold text-stone-300 uppercase tracking-widest">{date}</span>
           </div>
           
           <div className="flex items-center gap-1">
@@ -252,6 +250,8 @@ const ThoughtCard: React.FC<{
             </svg>
             {thought.resonates || 0} {hasResonated ? 'Resonated' : 'Resonate'}
           </button>
+          <span className="w-1 h-1 rounded-full bg-stone-200" />
+          <span className="text-[10px] font-bold text-stone-300 uppercase tracking-widest">{date}</span>
         </div>
       </div>
     </div>
@@ -436,52 +436,70 @@ const App: React.FC = () => {
 
   const getDynamicFontSize = (content: string) => {
     const len = content.length;
-    if (len < 50) return 'text-8xl';
-    if (len < 120) return 'text-7xl';
-    if (len < 250) return 'text-5xl';
-    if (len < 400) return 'text-4xl';
-    return 'text-3xl';
+    if (len < 50) return 'text-[110px] leading-[1.05]';
+    if (len < 120) return 'text-[84px] leading-[1.15]';
+    if (len < 250) return 'text-[64px] leading-[1.25]';
+    if (len < 400) return 'text-[48px] leading-[1.35]';
+    return 'text-[38px] leading-[1.4]';
   };
 
   return (
     <>
       {isLoading && <LoadingScreen />}
       
-      {/* Hidden Share Card Template for Capture */}
+      {/* Enhanced Share Card Template for Capture */}
       {capturing && (
         <div className="fixed -left-[2000px] top-0 pointer-events-none">
           <div 
             ref={captureRef}
-            className="w-[1080px] h-[1080px] bg-[#fcfaf7] paper-texture flex flex-col p-24 justify-between border-[16px] border-white shadow-inner relative"
+            className="w-[1200px] h-[1200px] bg-[#fcfaf7] paper-texture flex flex-col p-28 justify-between relative overflow-hidden"
           >
-             <div className="absolute top-12 left-24 text-[300px] leading-none text-stone-100 opacity-50 thought-font select-none pointer-events-none">
+             {/* Large background quote marks */}
+             <div className="absolute -top-10 -left-10 text-[600px] leading-none text-stone-900/5 thought-font select-none pointer-events-none italic opacity-30">
               “
              </div>
+             
+             {/* Archival metadata line at the very top */}
+             <div className="relative z-10 flex items-center justify-between border-b border-stone-200/60 pb-8">
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-black uppercase tracking-[0.5em] text-stone-300">Fragment ID</span>
+                  <span className="text-sm font-bold text-stone-900 heading-font uppercase">#{capturing.id}</span>
+                </div>
+                <span className="text-sm font-black uppercase tracking-[0.5em] text-stone-300">Archive 001-A</span>
+             </div>
 
-            <div className="space-y-12 relative z-10">
-              <div className="flex items-center gap-6">
-                <span className="text-xl font-black uppercase tracking-[0.4em] text-stone-900 bg-stone-100 px-6 py-2 rounded-full">
+            <div className="space-y-12 relative z-10 py-12 flex-grow flex flex-col justify-center">
+              <div className="flex items-center gap-6 mb-8">
+                <span className="text-2xl font-black uppercase tracking-[0.4em] text-stone-900 bg-stone-100 px-8 py-3 rounded-full">
                   {capturing.category}
                 </span>
-                <span className="text-xl font-bold text-stone-300 uppercase tracking-widest">
-                  {new Date(capturing.timestamp).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })}
-                </span>
+                <div className="h-[2px] flex-grow bg-stone-100" />
               </div>
-              <p className={`thought-font text-stone-900 leading-[1.3] whitespace-pre-wrap italic font-medium ${getDynamicFontSize(capturing.content)}`}>
+              
+              <p className={`thought-font text-stone-900 whitespace-pre-wrap italic font-semibold ${getDynamicFontSize(capturing.content)}`}>
                 {capturing.content}
               </p>
             </div>
 
-            <div className="flex items-center justify-between border-t border-stone-200 pt-16 relative z-10">
-              <div className="flex items-center gap-6">
-                <Logo size="md" />
-                <div className="space-y-1">
-                  <h3 className="heading-font text-3xl font-black tracking-tighter text-stone-900 leading-none">RTTS</h3>
-                  <p className="text-lg font-bold uppercase tracking-[0.2em] text-stone-300">ToluThinksALot.app</p>
+            <div className="flex items-end justify-between border-t-[3px] border-stone-900 pt-16 relative z-10">
+              <div className="flex items-center gap-8">
+                <div className="bg-stone-900 text-white w-28 h-28 rounded-2xl flex items-center justify-center font-black text-6xl heading-font shadow-2xl">
+                  T
+                </div>
+                <div className="space-y-2">
+                  <h3 className="heading-font text-5xl font-black tracking-tighter text-stone-900 leading-none">RTTS</h3>
+                  <p className="text-xl font-bold uppercase tracking-[0.3em] text-stone-400">ToluThinksALot.app</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4 text-stone-200">
-                <span className="text-xl font-black uppercase tracking-widest">{capturing.resonates} Resonates</span>
+              
+              <div className="flex flex-col items-end gap-3 text-stone-900">
+                <div className="flex items-center gap-4 text-2xl font-black uppercase tracking-widest bg-stone-50 px-6 py-2 rounded-lg">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="m12 19-7-7 7-7 7 7-7 7z"/></svg>
+                  {capturing.resonates} Resonates
+                </div>
+                <span className="text-xl font-bold text-stone-400 uppercase tracking-[0.4em]">
+                  {new Date(capturing.timestamp).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })}
+                </span>
               </div>
             </div>
           </div>
@@ -493,7 +511,7 @@ const App: React.FC = () => {
         <div className="fixed inset-0 z-[110] bg-stone-900/40 backdrop-blur-sm flex items-center justify-center animate-fade-in">
           <div className="bg-white p-12 rounded-[3rem] text-center space-y-6 shadow-2xl scale-in">
             <div className="w-12 h-12 border-4 border-stone-100 border-t-stone-900 rounded-full animate-spin mx-auto" />
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">Rendering high-res fragment</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">Generating Fragment Card</p>
           </div>
         </div>
       )}
