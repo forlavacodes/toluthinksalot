@@ -15,14 +15,14 @@ interface Thought {
   image?: string; // Base64 string
 }
 
-const CATEGORIES: Category[] = ['Deep thoughts', 'About HER', 'Poetic', 'Random Opinion', 'Politics', 'Humour'];
+const CATEGORIES: Category[] = ['Deep thoughts' , 'About HER', 'Poetic', 'Random Opinion', 'Politics', 'Humour'];
 
 // --- Audio Helpers ---
+
 const playSubtleChime = (ctx: AudioContext) => {
   const now = ctx.currentTime;
-  
-  // A soft E Major Triad for a calm, hopeful entry
-  const frequencies = [329.63, 392.00, 493.88]; // E4, G4, B4 (Subtle major feel)
+  const isMobile = window.innerWidth <= 768;
+  const frequencies = [329.63, 392.00, 493.88];
   
   const masterGain = ctx.createGain();
   const filter = ctx.createBiquadFilter();
@@ -31,27 +31,22 @@ const playSubtleChime = (ctx: AudioContext) => {
   filter.frequency.setValueAtTime(800, now);
   filter.Q.setValueAtTime(0.7, now);
 
+  // Louder on mobile: set target volume higher for small screens
+  const targetVolume = isMobile ? 0.6 : 0.35;
+
   masterGain.gain.setValueAtTime(0, now);
-  // Swelling attack - increased from 0.08 to 0.25 for more presence
-  masterGain.gain.linearRampToValueAtTime(0.25, now + 0.8);
-  // Extremely long decay for a lingering soft tail
+  masterGain.gain.linearRampToValueAtTime(targetVolume, now + 0.8);
   masterGain.gain.exponentialRampToValueAtTime(0.001, now + 4.0);
 
   frequencies.forEach((freq, i) => {
     const osc = ctx.createOscillator();
     const oscGain = ctx.createGain();
-    
-    osc.type = 'sine'; // Purest, softest waveform
+    osc.type = 'sine';
     osc.frequency.setValueAtTime(freq, now);
-    
-    // Slight detune for a "lush" ethereal feel
     osc.detune.setValueAtTime(i * 2, now);
-    
     oscGain.gain.setValueAtTime(0.15, now);
-    
     osc.connect(oscGain);
     oscGain.connect(masterGain);
-    
     osc.start(now);
     osc.stop(now + 4.5);
   });
@@ -63,18 +58,42 @@ const playSubtleChime = (ctx: AudioContext) => {
 // --- Sub-Components ---
 
 const Logo: React.FC<{ size?: 'sm' | 'md' | 'lg', className?: string, onClick?: () => void }> = ({ size = 'md', className = '', onClick }) => {
+  const [isActivating, setIsActivating] = useState(false);
+
   const dimensions = {
     sm: 'w-8 h-8 text-sm',
     md: 'w-12 h-12 text-xl',
     lg: 'w-20 h-20 text-4xl'
   };
 
+  const handleClick = (e: React.MouseEvent) => {
+    setIsActivating(true);
+    setTimeout(() => setIsActivating(false), 600);
+    if (onClick) onClick();
+  };
+
   return (
-    <div 
-      onClick={onClick}
-      className={`${dimensions[size]} bg-stone-900 text-white rounded-[30%] flex items-center justify-center font-black heading-font select-none shadow-lg shadow-stone-900/10 ${className} ${onClick ? 'cursor-default active:scale-90 transition-transform duration-75' : ''}`}
-    >
-      T
+    <div className="relative inline-block">
+      <div 
+        onClick={handleClick}
+        className={`
+          ${dimensions[size]} 
+          bg-stone-900 text-white rounded-[30%] 
+          flex items-center justify-center font-black heading-font 
+          select-none shadow-lg shadow-stone-900/10 cursor-pointer 
+          transition-all duration-500 ease-out transform
+          hover:scale-110 hover:-rotate-6 hover:shadow-stone-900/20
+          active:scale-90
+          ${isActivating ? 'animate-logo-pop' : ''} 
+          ${className}
+        `}
+      >
+        T
+      </div>
+      {/* Visual Ripple Element */}
+      {isActivating && (
+        <div className="absolute inset-0 bg-stone-900 rounded-[30%] animate-logo-ripple pointer-events-none -z-10"></div>
+      )}
     </div>
   );
 };
@@ -134,15 +153,11 @@ const LoadingScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
 
   const startEntry = () => {
     setHasStarted(true);
-    
-    // Play subtle procedural chime
+    // Initialize audio on user interaction
     const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     playSubtleChime(audioCtx);
 
-    // Auto complete after animation
     setTimeout(() => {
       setIsFinishing(true);
       setTimeout(onComplete, 800);
@@ -152,19 +167,19 @@ const LoadingScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
   return (
     <div className={`fixed inset-0 z-[100] bg-[#fcfaf7] paper-texture flex flex-col items-center justify-center transition-all duration-1000 ${isFinishing ? 'opacity-0 pointer-events-none scale-105' : 'opacity-100'}`}>
       {!hasStarted ? (
-        <button 
-          onClick={startEntry}
-          className="group flex flex-col items-center gap-10 animate-fade-in"
-        >
+        <div className="group flex flex-col items-center gap-10 animate-fade-in">
           <div className="relative">
-             <Logo size="lg" className="hover:scale-110 active:scale-95 transition-transform cursor-pointer" />
+             <Logo size="lg" />
              <div className="absolute inset-0 bg-stone-900 rounded-[30%] animate-ping opacity-10 pointer-events-none"></div>
           </div>
-          <div className="text-center space-y-4">
+          <button 
+            onClick={startEntry}
+            className="text-center space-y-4 group"
+          >
              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-stone-300 group-hover:text-stone-900 transition-colors">Enter Archive</p>
              <p className="text-[9px] font-bold italic text-stone-200">Silence is just a thought awaiting its turn</p>
-          </div>
-        </button>
+          </button>
+        </div>
       ) : (
         <div className="max-w-xs w-full px-12 space-y-8 text-center flex flex-col items-center animate-fade-in">
           <div className="pulse-soft">
@@ -236,7 +251,7 @@ const ThoughtInput: React.FC<{ onAdd: (content: string, category: Category, imag
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="What's crossing your mind?"
-            className="w-full h-48 p-8 thought-font text-2xl resize-none placeholder-stone-200 bg-transparent border-0 ring-0 focus:ring-0"
+            className="w-full h-48 p-8 thought-font text-2xl resize-none placeholder-stone-300 bg-transparent border-0 ring-0 focus:ring-0"
           />
         </div>
         
@@ -280,23 +295,94 @@ const ThoughtInput: React.FC<{ onAdd: (content: string, category: Category, imag
   );
 };
 
+const EditThoughtModal: React.FC<{ 
+  thought: Thought; 
+  onSave: (id: string, content: string, category: Category) => void;
+  onClose: () => void;
+}> = ({ thought, onSave, onClose }) => {
+  const [content, setContent] = useState(thought.content);
+  const [category, setCategory] = useState<Category>(thought.category);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!content.trim()) return;
+    onSave(thought.id, content, category);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[120] bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
+      <div className="bg-[#fcfaf7] paper-texture w-full max-w-xl rounded-[3rem] shadow-2xl p-10 space-y-8 animate-scale-in">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h2 className="heading-font text-2xl font-black tracking-tighter">Refine Fragment</h2>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">Memory Revision</p>
+          </div>
+          <button onClick={onClose} className="p-2 text-stone-300 hover:text-stone-900 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="bg-white border border-stone-100 rounded-[2rem] shadow-sm focus-within:shadow-xl transition-all overflow-hidden p-6">
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="w-full h-40 thought-font text-xl resize-none bg-transparent"
+              autoFocus
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as Category)}
+              className="bg-white text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-full border border-stone-100 outline-none focus:border-stone-900 cursor-pointer appearance-none shadow-sm"
+            >
+              {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+            </select>
+
+            <button
+              type="submit"
+              disabled={!content.trim() || (content === thought.content && category === thought.category)}
+              className="bg-stone-900 text-white px-8 h-11 rounded-full font-black uppercase tracking-widest text-[10px] shadow-lg shadow-stone-900/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-20 disabled:scale-100"
+            >
+              Update Thought
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const ThoughtCard: React.FC<{ 
   thought: Thought; 
   onDelete: (id: string) => void; 
+  onEdit: (thought: Thought) => void;
   onResonate: (id: string) => void;
   onOpen: (thought: Thought) => void;
   onImageShare: (thought: Thought) => void;
   isOwner: boolean;
   hasResonated: boolean;
-}> = ({ thought, onDelete, onResonate, onOpen, onImageShare, isOwner, hasResonated }) => {
+}> = ({ thought, onDelete, onEdit, onResonate, onOpen, onImageShare, isOwner, hasResonated }) => {
+  const [isResonatingLocal, setIsResonatingLocal] = useState(false);
   const date = new Date(thought.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
 
+  const handleResonateClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!hasResonated) {
+      setIsResonatingLocal(true);
+      setTimeout(() => setIsResonatingLocal(false), 800);
+      onResonate(thought.id);
+    }
+  };
+
   return (
-    <div className="group relative py-12 border-b border-stone-100 last:border-0 hover:bg-stone-50/30 px-6 -mx-6 rounded-[2.5rem] transition-all">
+    <div className="group relative py-12 border-b border-stone-100 last:border-0 hover:bg-stone-100/40 px-6 -mx-6 rounded-[2.5rem] transition-all">
       <div className="flex flex-col gap-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-300 group-hover:text-stone-900 transition-colors">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 group-hover:text-stone-900 transition-colors">
               {thought.category}
             </span>
           </div>
@@ -313,12 +399,22 @@ const ThoughtCard: React.FC<{
               Archive
             </button>
             {isOwner && (
-              <button 
-                onClick={(e) => { e.stopPropagation(); onDelete(thought.id); }}
-                className="opacity-0 group-hover:opacity-100 p-2 text-stone-300 hover:text-red-500 transition-all ml-1"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-              </button>
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onEdit(thought); }}
+                  className="p-2 text-stone-300 hover:text-stone-900 transition-all"
+                  title="Edit Fragment"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                </button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onDelete(thought.id); }}
+                  className="p-2 text-stone-300 hover:text-red-500 transition-all"
+                  title="Remove Fragment"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -334,17 +430,22 @@ const ThoughtCard: React.FC<{
 
         <p 
           onClick={() => onOpen(thought)}
-          className="thought-font text-2xl md:text-3xl text-stone-800 leading-relaxed cursor-pointer hover:text-stone-900 transition-colors line-clamp-4 px-2"
+          className="thought-font thought-content-main text-2xl md:text-3xl cursor-pointer hover:text-stone-900 transition-colors line-clamp-4 px-2"
         >
           {thought.content}
         </p>
 
         <div className="flex items-center gap-6 px-2">
           <button 
-            onClick={(e) => { e.stopPropagation(); onResonate(thought.id); }}
+            onClick={handleResonateClick}
             disabled={hasResonated}
-            className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${hasResonated ? 'text-stone-900 cursor-default' : 'text-stone-400 hover:text-stone-900'}`}
+            className={`relative flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${hasResonated ? 'text-stone-900 cursor-default' : 'text-stone-400 hover:text-stone-900'}`}
           >
+            {isResonatingLocal && (
+              <span className="absolute -top-10 left-1/2 -translate-x-1/2 animate-float-up text-[12px] text-stone-900 font-bold pointer-events-none">
+                +1
+              </span>
+            )}
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
               width="14" 
@@ -355,9 +456,9 @@ const ThoughtCard: React.FC<{
               strokeWidth="2.5" 
               strokeLinecap="round" 
               strokeLinejoin="round"
-              className="transition-transform duration-300"
+              className={`transition-all duration-300 ${isResonatingLocal ? 'animate-resonate-pop' : ''}`}
             >
-              <path d="m12 19-7-7 7-7 7 7-7 7z"/>
+              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
             </svg>
             {thought.resonates || 0} {hasResonated ? 'Resonated' : 'Resonate'}
           </button>
@@ -379,6 +480,7 @@ const App: React.FC = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [loginKey, setLoginKey] = useState('');
   const [selectedThought, setSelectedThought] = useState<Thought | null>(null);
+  const [editingThought, setEditingThought] = useState<Thought | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [capturing, setCapturing] = useState<Thought | null>(null);
   
@@ -453,6 +555,13 @@ const App: React.FC = () => {
     setThoughts([newThought, ...thoughts]);
   };
 
+  const updateThought = (id: string, content: string, category: Category) => {
+    setThoughts(prev => prev.map(t => 
+      t.id === id ? { ...t, content, category } : t
+    ));
+    setEditingThought(null);
+  };
+
   const deleteThought = (id: string) => {
     setThoughts(prev => prev.filter(t => t.id !== id));
     setReactedIds(prev => prev.filter(rid => rid !== id));
@@ -477,8 +586,6 @@ const App: React.FC = () => {
 
   const handleSecretTrigger = () => {
     secretClickCount.current++;
-    console.debug(`Identity verification step ${secretClickCount.current}/5`);
-    
     if (secretClickTimeout.current) window.clearTimeout(secretClickTimeout.current);
     
     if (secretClickCount.current >= 5) {
@@ -524,9 +631,7 @@ const App: React.FC = () => {
           useCORS: true,
           logging: false,
         });
-        
         const dataUrl = canvas.toDataURL('image/png');
-        
         if (navigator.share && navigator.canShare) {
           const blob = await (await fetch(dataUrl)).blob();
           const file = new File([blob], `tolu-says-${thought.id}.png`, { type: 'image/png' });
@@ -540,7 +645,6 @@ const App: React.FC = () => {
             return;
           }
         }
-
         const link = document.createElement('a');
         link.download = `tolu-says-${thought.id}.png`;
         link.href = dataUrl;
@@ -559,23 +663,23 @@ const App: React.FC = () => {
   const getDynamicFontSize = (content: string, hasImage?: boolean) => {
     const len = content.length;
     if (hasImage) {
-      if (len < 50) return 'text-[92px] leading-[1.05]';
-      if (len < 120) return 'text-[72px] leading-[1.15]';
-      if (len < 250) return 'text-[56px] leading-[1.25]';
-      return 'text-[44px] leading-[1.3]';
+      if (len < 50) return 'text-[82px] leading-[1.05]';
+      if (len < 120) return 'text-[62px] leading-[1.15]';
+      if (len < 250) return 'text-[48px] leading-[1.25]';
+      return 'text-[36px] leading-[1.3]';
     }
-    if (len < 50) return 'text-[110px] leading-[1.05]';
-    if (len < 120) return 'text-[84px] leading-[1.15]';
-    if (len < 250) return 'text-[64px] leading-[1.25]';
-    if (len < 400) return 'text-[48px] leading-[1.35]';
-    return 'text-[38px] leading-[1.4]';
+    if (len < 50) return 'text-[100px] leading-[1.05]';
+    if (len < 120) return 'text-[76px] leading-[1.15]';
+    if (len < 250) return 'text-[56px] leading-[1.25]';
+    if (len < 400) return 'text-[42px] leading-[1.35]';
+    return 'text-[32px] leading-[1.4]';
   };
 
   return (
     <>
       {isLoading && <LoadingScreen onComplete={() => setIsLoading(false)} />}
       
-      {/* Refined Share Card Template */}
+      {/* Share Card Template */}
       {capturing && (
         <div className="fixed -left-[4000px] top-0 pointer-events-none">
           <div 
@@ -588,7 +692,6 @@ const App: React.FC = () => {
               </span>
               <Logo size="md" className="opacity-80" />
             </div>
-
             <div className={`relative z-10 flex flex-col justify-center gap-20 py-16 ${capturing.image ? 'flex-grow' : 'flex-grow justify-center'}`}>
               {capturing.image && (
                 <div className="w-full flex justify-center">
@@ -598,19 +701,17 @@ const App: React.FC = () => {
                 </div>
               )}
               <div className={capturing.image ? 'text-center' : 'text-left'}>
-                <p className={`thought-font text-stone-900 whitespace-pre-wrap italic font-semibold ${getDynamicFontSize(capturing.content, !!capturing.image)}`}>
+                <p className={`thought-font text-stone-900 whitespace-pre-wrap font-medium ${getDynamicFontSize(capturing.content, !!capturing.image)}`}>
                   {capturing.content}
                 </p>
               </div>
             </div>
-
             <div className="relative z-10 flex flex-col gap-12">
               <div className="flex items-end justify-between border-t-[4px] border-stone-900 pt-16">
                 <div className="space-y-2">
                   <h3 className="heading-font text-6xl font-black tracking-tighter text-stone-900 leading-none uppercase">RTTS</h3>
                   <p className="text-xl font-bold uppercase tracking-[0.4em] text-stone-400">Archive Code: {capturing.id}</p>
                 </div>
-                
                 <div className="text-right">
                   <span className="text-2xl font-black text-stone-900 uppercase tracking-[0.4em] block mb-2">
                     {new Date(capturing.timestamp).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })}
@@ -619,7 +720,6 @@ const App: React.FC = () => {
                 </div>
               </div>
             </div>
-
             <div className="absolute top-0 right-0 w-full h-full opacity-[0.03] pointer-events-none select-none">
               <div className="text-[300px] font-black heading-font absolute -bottom-40 -left-20 rotate-12">RTTS</div>
             </div>
@@ -666,6 +766,10 @@ const App: React.FC = () => {
           </div>
         )}
 
+        {editingThought && (
+          <EditThoughtModal thought={editingThought} onSave={updateThought} onClose={() => setEditingThought(null)} />
+        )}
+
         {selectedThought && (
           <div className="fixed inset-0 z-[60] bg-[#fcfaf7] overflow-y-auto px-6 py-24 md:py-48 animate-fade-in paper-texture">
             <button 
@@ -674,7 +778,7 @@ const App: React.FC = () => {
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
             </button>
-            <div className="max-w-2xl mx-auto space-y-16">
+            <div className="max-w-2xl mx-auto space-y-20">
               <div className="flex flex-wrap items-center gap-6 pb-12 border-b border-stone-100">
                 <span className="px-6 py-2 bg-stone-900 text-white text-[10px] font-black uppercase tracking-widest rounded-full">{selectedThought.category}</span>
                 <div className="flex items-center gap-3">
@@ -685,17 +789,16 @@ const App: React.FC = () => {
                   <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest">{selectedThought.resonates} resonates</span>
                 </div>
               </div>
-
               {selectedThought.image && (
                 <div className="w-full overflow-hidden rounded-[2.5rem] shadow-2xl bg-white p-6 border border-stone-100">
                   <img src={selectedThought.image} alt="Fragment view" className="w-full h-auto rounded-3xl" />
                 </div>
               )}
-
-              <p className="thought-font text-4xl md:text-5xl lg:text-6xl text-stone-900 leading-[1.3] md:leading-[1.2] whitespace-pre-wrap italic">
-                {selectedThought.content}
-              </p>
-              
+              <div className="space-y-12">
+                <p className={`thought-font thought-content-expanded text-4xl md:text-5xl lg:text-6xl whitespace-pre-wrap ${selectedThought.content.length > 50 ? 'drop-cap' : ''}`}>
+                  {selectedThought.content}
+                </p>
+              </div>
               <div className="pt-12 flex justify-start">
                  <button 
                     onClick={() => handleImageShare(selectedThought)}
@@ -710,9 +813,7 @@ const App: React.FC = () => {
         )}
 
         <header className="pt-32 pb-20 text-center max-w-4xl mx-auto w-full px-6 flex flex-col items-center">
-          <button onClick={resetAll} className="mb-12 hover:scale-110 active:scale-95 transition-all">
-            <Logo size="lg" />
-          </button>
+          <Logo size="lg" className="mb-12" onClick={resetAll} />
           <h1 className="heading-font text-6xl md:text-8xl font-black text-stone-900 mb-12 tracking-tighter leading-[0.9]">
             Random Things<br/>Tolu Says
           </h1>
@@ -737,7 +838,6 @@ const App: React.FC = () => {
 
         <main className="flex-grow max-w-2xl mx-auto w-full pb-32">
           {isOwner && <ThoughtInput onAdd={addThought} />}
-          
           <div className="space-y-6 px-6">
             {filteredThoughts.length === 0 ? (
               <div className="py-48 text-center animate-fade-in">
@@ -749,6 +849,7 @@ const App: React.FC = () => {
                   key={t.id} 
                   thought={t} 
                   onDelete={deleteThought} 
+                  onEdit={setEditingThought}
                   onResonate={resonate} 
                   onOpen={openThought}
                   onImageShare={handleImageShare}
@@ -763,7 +864,7 @@ const App: React.FC = () => {
         <footer className="py-32 text-center border-t border-stone-100 mt-auto bg-stone-50/30">
           <div className="max-w-2xl mx-auto px-6 space-y-10 flex flex-col items-center">
             <div className="flex items-center gap-4">
-               <Logo size="sm" className="opacity-50" onClick={handleSecretTrigger} />
+               <Logo size="sm" onClick={handleSecretTrigger} />
                <span className="heading-font text-xl font-black text-stone-300 tracking-tighter select-none">
                  RTTS Signature
                </span>
@@ -783,7 +884,6 @@ const App: React.FC = () => {
             </div>
           </div>
         </footer>
-        
         <ScrollToTopButton />
       </div>
     </>
