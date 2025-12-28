@@ -58,42 +58,24 @@ const playSubtleChime = (ctx: AudioContext) => {
 // --- Sub-Components ---
 
 const Logo: React.FC<{ size?: 'sm' | 'md' | 'lg', className?: string, onClick?: () => void }> = ({ size = 'md', className = '', onClick }) => {
-  const [isActivating, setIsActivating] = useState(false);
-
   const dimensions = {
     sm: 'w-8 h-8 text-sm',
     md: 'w-12 h-12 text-xl',
     lg: 'w-20 h-20 text-4xl'
   };
 
-  const handleClick = (e: React.MouseEvent) => {
-    setIsActivating(true);
-    setTimeout(() => setIsActivating(false), 600);
-    if (onClick) onClick();
-  };
-
   return (
-    <div className="relative inline-block">
-      <div 
-        onClick={handleClick}
-        className={`
-          ${dimensions[size]} 
-          bg-stone-900 text-white rounded-[30%] 
-          flex items-center justify-center font-black heading-font 
-          select-none shadow-lg shadow-stone-900/10 cursor-pointer 
-          transition-all duration-500 ease-out transform
-          hover:scale-110 hover:-rotate-6 hover:shadow-stone-900/20
-          active:scale-90
-          ${isActivating ? 'animate-logo-pop' : ''} 
-          ${className}
-        `}
-      >
-        T
-      </div>
-      {/* Visual Ripple Element */}
-      {isActivating && (
-        <div className="absolute inset-0 bg-stone-900 rounded-[30%] animate-logo-ripple pointer-events-none -z-10"></div>
-      )}
+    <div 
+      onClick={onClick}
+      className={`
+        ${dimensions[size]} 
+        bg-stone-900 text-white rounded-[30%] 
+        flex items-center justify-center font-black heading-font 
+        select-none shadow-lg shadow-stone-900/10 cursor-pointer 
+        ${className}
+      `}
+    >
+      T
     </div>
   );
 };
@@ -168,10 +150,7 @@ const LoadingScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
     <div className={`fixed inset-0 z-[100] bg-[#fcfaf7] paper-texture flex flex-col items-center justify-center transition-all duration-1000 ${isFinishing ? 'opacity-0 pointer-events-none scale-105' : 'opacity-100'}`}>
       {!hasStarted ? (
         <div className="group flex flex-col items-center gap-10 animate-fade-in">
-          <div className="relative">
-             <Logo size="lg" />
-             <div className="absolute inset-0 bg-stone-900 rounded-[30%] animate-ping opacity-10 pointer-events-none"></div>
-          </div>
+          <Logo size="lg" />
           <button 
             onClick={startEntry}
             className="text-center space-y-4 group"
@@ -251,7 +230,7 @@ const ThoughtInput: React.FC<{ onAdd: (content: string, category: Category, imag
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="What's crossing your mind?"
-            className="w-full h-48 p-8 thought-font text-2xl resize-none placeholder-stone-300 bg-transparent border-0 ring-0 focus:ring-0"
+            className="w-full h-48 p-8 thought-font text-xl resize-none placeholder-stone-300 bg-transparent border-0 ring-0 focus:ring-0"
           />
         </div>
         
@@ -430,7 +409,7 @@ const ThoughtCard: React.FC<{
 
         <p 
           onClick={() => onOpen(thought)}
-          className="thought-font thought-content-main text-2xl md:text-3xl cursor-pointer hover:text-stone-900 transition-colors line-clamp-4 px-2"
+          className="thought-font thought-content-main text-xl md:text-2xl cursor-pointer hover:text-stone-900 transition-colors line-clamp-4 px-2"
         >
           {thought.content}
         </p>
@@ -663,16 +642,16 @@ const App: React.FC = () => {
   const getDynamicFontSize = (content: string, hasImage?: boolean) => {
     const len = content.length;
     if (hasImage) {
-      if (len < 50) return 'text-[82px] leading-[1.05]';
-      if (len < 120) return 'text-[62px] leading-[1.15]';
-      if (len < 250) return 'text-[48px] leading-[1.25]';
-      return 'text-[36px] leading-[1.3]';
+      if (len < 50) return 'text-[72px] leading-[1.05]';
+      if (len < 120) return 'text-[54px] leading-[1.15]';
+      if (len < 250) return 'text-[42px] leading-[1.25]';
+      return 'text-[32px] leading-[1.3]';
     }
-    if (len < 50) return 'text-[100px] leading-[1.05]';
-    if (len < 120) return 'text-[76px] leading-[1.15]';
-    if (len < 250) return 'text-[56px] leading-[1.25]';
-    if (len < 400) return 'text-[42px] leading-[1.35]';
-    return 'text-[32px] leading-[1.4]';
+    if (len < 50) return 'text-[90px] leading-[1.05]';
+    if (len < 120) return 'text-[68px] leading-[1.15]';
+    if (len < 250) return 'text-[50px] leading-[1.25]';
+    if (len < 400) return 'text-[38px] leading-[1.35]';
+    return 'text-[28px] leading-[1.4]';
   };
 
   return (
@@ -684,44 +663,77 @@ const App: React.FC = () => {
         <div className="fixed -left-[4000px] top-0 pointer-events-none">
           <div 
             ref={captureRef}
-            className={`w-[1400px] bg-[#fcfaf7] paper-texture flex flex-col p-32 justify-between relative overflow-hidden ${capturing.image ? 'min-h-[1600px]' : 'min-h-[1200px]'}`}
+            className={`w-[1400px] bg-[#fcfaf7] paper-texture flex flex-col p-24 justify-between relative overflow-hidden border-[16px] border-stone-900 ${capturing.image ? 'min-h-[1600px]' : 'min-h-[1200px]'}`}
           >
-            <div className="relative z-10 flex items-center justify-between">
-              <span className="text-3xl font-black uppercase tracking-[0.5em] text-stone-900 bg-white border border-stone-200 px-10 py-4 rounded-full shadow-sm">
-                {capturing.category}
-              </span>
-              <Logo size="md" className="opacity-80" />
+            {/* Subtle Inner Decorative Border */}
+            <div className="absolute inset-4 border-[2px] border-stone-200 pointer-events-none"></div>
+
+            {/* Header Metadata */}
+            <div className="relative z-10 flex items-start justify-between">
+              <div className="space-y-4">
+                <div className="flex items-center gap-6">
+                  <span className="bg-stone-900 text-white px-8 py-3 rounded-md text-2xl font-black uppercase tracking-[0.4em] transform -rotate-1">
+                    {capturing.category}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-2 pt-4">
+                  <p className="text-xl font-black uppercase tracking-[0.5em] text-stone-300">Archive Reference</p>
+                  <p className="text-3xl font-bold text-stone-900">CODEX_{capturing.id.toUpperCase()}</p>
+                </div>
+              </div>
+              <Logo size="md" className="shadow-none opacity-20" />
             </div>
-            <div className={`relative z-10 flex flex-col justify-center gap-20 py-16 ${capturing.image ? 'flex-grow' : 'flex-grow justify-center'}`}>
+
+            {/* Main Content Area */}
+            <div className={`relative z-10 flex flex-col items-center gap-16 py-12 ${capturing.image ? 'justify-start' : 'justify-center flex-grow'}`}>
               {capturing.image && (
-                <div className="w-full flex justify-center">
-                  <div className="bg-white p-6 shadow-2xl rounded-[3rem] border border-stone-100 rotate-1 transform-gpu">
-                    <img src={capturing.image} alt="" className="w-full max-h-[800px] object-contain rounded-[2rem]" />
+                <div className="w-full flex justify-center px-12">
+                  <div className="bg-white p-8 shadow-2xl rounded-sm border border-stone-100 flex flex-col gap-6 w-full transform rotate-[0.5deg]">
+                    <div className="overflow-hidden bg-stone-50">
+                      <img src={capturing.image} alt="" className="w-full max-h-[850px] object-contain" />
+                    </div>
+                    <div className="flex justify-between items-center opacity-40">
+                      <p className="text-lg font-mono uppercase tracking-widest">VISUAL_FRAGMENT_NO_{capturing.id.toUpperCase()}</p>
+                      <p className="text-lg font-mono">{(new Date()).getFullYear()}</p>
+                    </div>
                   </div>
                 </div>
               )}
-              <div className={capturing.image ? 'text-center' : 'text-left'}>
-                <p className={`thought-font text-stone-900 whitespace-pre-wrap font-medium ${getDynamicFontSize(capturing.content, !!capturing.image)}`}>
+              
+              <div className={`px-12 w-full ${capturing.image ? 'text-center' : 'text-left'}`}>
+                <p className={`thought-font text-stone-900 whitespace-pre-wrap font-medium leading-tight ${getDynamicFontSize(capturing.content, !!capturing.image)}`}>
                   {capturing.content}
                 </p>
               </div>
             </div>
-            <div className="relative z-10 flex flex-col gap-12">
-              <div className="flex items-end justify-between border-t-[4px] border-stone-900 pt-16">
-                <div className="space-y-2">
-                  <h3 className="heading-font text-6xl font-black tracking-tighter text-stone-900 leading-none uppercase">RTTS</h3>
-                  <p className="text-xl font-bold uppercase tracking-[0.4em] text-stone-400">Archive Code: {capturing.id}</p>
+
+            {/* Footer Signature */}
+            <div className="relative z-10 space-y-12">
+              <div className="h-[2px] bg-stone-900 w-full opacity-10"></div>
+              <div className="flex items-end justify-between">
+                <div className="space-y-4">
+                  <h3 className="heading-font text-7xl font-black tracking-tighter text-stone-900 leading-none">
+                    RTTS
+                  </h3>
+                  <p className="text-2xl font-black uppercase tracking-[0.3em] text-stone-400">Random Things Tolu Says</p>
                 </div>
-                <div className="text-right">
-                  <span className="text-2xl font-black text-stone-900 uppercase tracking-[0.4em] block mb-2">
-                    {new Date(capturing.timestamp).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })}
-                  </span>
-                  <p className="text-xl font-black uppercase tracking-[0.6em] text-stone-300">ToluThinksALot.app</p>
+                
+                <div className="text-right space-y-4">
+                  <div className="inline-block border-2 border-stone-900 px-6 py-2">
+                    <span className="text-3xl font-black text-stone-900 uppercase tracking-[0.2em]">
+                      {new Date(capturing.timestamp).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })}
+                    </span>
+                  </div>
+                  <p className="text-xl font-bold uppercase tracking-[0.5em] text-stone-300">ToluThinksALot.app</p>
                 </div>
               </div>
             </div>
-            <div className="absolute top-0 right-0 w-full h-full opacity-[0.03] pointer-events-none select-none">
-              <div className="text-[300px] font-black heading-font absolute -bottom-40 -left-20 rotate-12">RTTS</div>
+
+            {/* Massive Background Watermark */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full opacity-[0.02] pointer-events-none select-none flex items-center justify-center overflow-hidden">
+              <div className="text-[600px] font-black heading-font rotate-12 whitespace-nowrap">
+                ARCHIVE_{capturing.id.toUpperCase()}
+              </div>
             </div>
           </div>
         </div>
@@ -795,7 +807,7 @@ const App: React.FC = () => {
                 </div>
               )}
               <div className="space-y-12">
-                <p className={`thought-font thought-content-expanded text-4xl md:text-5xl lg:text-6xl whitespace-pre-wrap ${selectedThought.content.length > 50 ? 'drop-cap' : ''}`}>
+                <p className={`thought-font thought-content-expanded text-3xl md:text-4xl lg:text-5xl whitespace-pre-wrap ${selectedThought.content.length > 50 ? 'drop-cap' : ''}`}>
                   {selectedThought.content}
                 </p>
               </div>
