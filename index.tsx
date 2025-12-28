@@ -609,6 +609,9 @@ const App: React.FC = () => {
           scale: 3,
           useCORS: true,
           logging: false,
+          allowTaint: true,
+          scrollX: 0,
+          scrollY: 0,
         });
         const dataUrl = canvas.toDataURL('image/png');
         if (navigator.share && navigator.canShare) {
@@ -642,16 +645,18 @@ const App: React.FC = () => {
   const getDynamicFontSize = (content: string, hasImage?: boolean) => {
     const len = content.length;
     if (hasImage) {
-      if (len < 50) return 'text-[72px] leading-[1.05]';
-      if (len < 120) return 'text-[54px] leading-[1.15]';
-      if (len < 250) return 'text-[42px] leading-[1.25]';
-      return 'text-[32px] leading-[1.3]';
+      if (len < 50) return 'text-[72px]';
+      if (len < 120) return 'text-[54px]';
+      if (len < 250) return 'text-[42px]';
+      if (len < 600) return 'text-[32px]';
+      return 'text-[24px]';
     }
-    if (len < 50) return 'text-[90px] leading-[1.05]';
-    if (len < 120) return 'text-[68px] leading-[1.15]';
-    if (len < 250) return 'text-[50px] leading-[1.25]';
-    if (len < 400) return 'text-[38px] leading-[1.35]';
-    return 'text-[28px] leading-[1.4]';
+    if (len < 50) return 'text-[90px]';
+    if (len < 120) return 'text-[68px]';
+    if (len < 250) return 'text-[50px]';
+    if (len < 500) return 'text-[38px]';
+    if (len < 1000) return 'text-[28px]';
+    return 'text-[20px]';
   };
 
   return (
@@ -663,13 +668,13 @@ const App: React.FC = () => {
         <div className="fixed -left-[4000px] top-0 pointer-events-none">
           <div 
             ref={captureRef}
-            className={`w-[1400px] bg-[#fcfaf7] paper-texture flex flex-col p-24 justify-between relative overflow-hidden border-[16px] border-stone-900 ${capturing.image ? 'min-h-[1600px]' : 'min-h-[1200px]'}`}
+            className={`w-[1400px] h-auto min-h-[1200px] bg-[#fcfaf7] paper-texture flex flex-col p-24 justify-between relative overflow-visible border-[16px] border-stone-900`}
           >
             {/* Subtle Inner Decorative Border */}
             <div className="absolute inset-4 border-[2px] border-stone-200 pointer-events-none"></div>
 
             {/* Header Metadata */}
-            <div className="relative z-10 flex items-start justify-between">
+            <div className="relative z-10 flex items-start justify-between mb-16">
               <div className="space-y-4">
                 <div className="flex items-center gap-6">
                   <span className="bg-stone-900 text-white px-8 py-3 rounded-md text-2xl font-black uppercase tracking-[0.4em] transform -rotate-1">
@@ -681,13 +686,13 @@ const App: React.FC = () => {
                   <p className="text-3xl font-bold text-stone-900">CODEX_{capturing.id.toUpperCase()}</p>
                 </div>
               </div>
-              <Logo size="md" className="shadow-none opacity-20" />
+              <Logo size="md" className="shadow-none opacity-100" />
             </div>
 
-            {/* Main Content Area */}
-            <div className={`relative z-10 flex flex-col items-center gap-16 py-12 ${capturing.image ? 'justify-start' : 'justify-center flex-grow'}`}>
+            {/* Main Content Area - Growing to fit content */}
+            <div className={`relative z-10 flex flex-col items-center gap-16 py-12 flex-grow ${capturing.image ? 'justify-start' : 'justify-center'}`}>
               {capturing.image && (
-                <div className="w-full flex justify-center px-12">
+                <div className="w-full flex justify-center px-12 mb-12">
                   <div className="bg-white p-8 shadow-2xl rounded-sm border border-stone-100 flex flex-col gap-6 w-full transform rotate-[0.5deg]">
                     <div className="overflow-hidden bg-stone-50">
                       <img src={capturing.image} alt="" className="w-full max-h-[850px] object-contain" />
@@ -700,15 +705,15 @@ const App: React.FC = () => {
                 </div>
               )}
               
-              <div className={`px-12 w-full ${capturing.image ? 'text-center' : 'text-left'}`}>
-                <p className={`thought-font text-stone-900 whitespace-pre-wrap font-medium leading-tight ${getDynamicFontSize(capturing.content, !!capturing.image)}`}>
+              <div className={`px-12 w-full text-stone-900 ${capturing.image ? 'text-center' : 'text-left'}`}>
+                <p className={`thought-font whitespace-pre-wrap font-medium leading-tight ${getDynamicFontSize(capturing.content, !!capturing.image)}`}>
                   {capturing.content}
                 </p>
               </div>
             </div>
 
-            {/* Footer Signature */}
-            <div className="relative z-10 space-y-12">
+            {/* Footer Signature - Pushed to bottom by flex-grow */}
+            <div className="relative z-10 mt-20 space-y-12">
               <div className="h-[2px] bg-stone-900 w-full opacity-10"></div>
               <div className="flex items-end justify-between">
                 <div className="space-y-4">
