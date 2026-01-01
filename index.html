@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -53,7 +52,35 @@
         from { opacity: 0; transform: translateY(-15px); }
         to { opacity: 1; transform: translateY(0); }
       }
-      
+
+      /* Festive Greeting Animations */
+      .animate-shimmer {
+        background: linear-gradient(
+          90deg,
+          #1c1917 0%,
+          #a8a29e 25%,
+          #1c1917 50%,
+          #a8a29e 75%,
+          #1c1917 100%
+        );
+        background-size: 200% auto;
+        color: transparent;
+        -webkit-background-clip: text;
+        background-clip: text;
+        animation: shimmer 5s linear infinite;
+      }
+      @keyframes shimmer {
+        to { background-position: 200% center; }
+      }
+
+      .animate-float-slow {
+        animation: floatSlow 6s ease-in-out infinite;
+      }
+      @keyframes floatSlow {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-8px); }
+      }
+
       .pulse-soft {
         animation: pulseSoft 2.5s ease-in-out infinite;
       }
@@ -62,24 +89,6 @@
         50% { opacity: 0.8; transform: scale(1); }
       }
       
-      .animate-logo-pop {
-        animation: logoPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-      }
-      @keyframes logoPop {
-        0% { transform: scale(1) rotate(0); }
-        30% { transform: scale(1.3) rotate(-12deg); }
-        60% { transform: scale(0.95) rotate(5deg); }
-        100% { transform: scale(1) rotate(0); }
-      }
-
-      .animate-logo-ripple {
-        animation: logoRipple 0.6s ease-out forwards;
-      }
-      @keyframes logoRipple {
-        0% { transform: scale(1); opacity: 0.5; }
-        100% { transform: scale(2.5); opacity: 0; }
-      }
-
       .animate-resonate-pop {
         animation: resonatePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
       }
@@ -108,6 +117,7 @@
         from { transform: scaleX(0); }
         to { transform: scaleX(1); }
       }
+      
       ::-webkit-scrollbar {
         width: 6px;
       }
@@ -127,19 +137,6 @@
       }
       html {
         scroll-behavior: smooth;
-      }
-
-      /* Specific Typography Enhancement */
-      .thought-content-main {
-        font-weight: 450;
-        line-height: 1.45;
-        color: #27272a;
-      }
-      
-      .thought-content-expanded {
-        font-weight: 350;
-        line-height: 1.35;
-        color: #09090b;
       }
 
       .drop-cap::first-letter {
