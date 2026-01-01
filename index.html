@@ -44,43 +44,6 @@
         to { opacity: 1; transform: translateY(0); }
       }
 
-      .animate-fade-in-down {
-        opacity: 0;
-        animation: fadeInDown 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
-      }
-      @keyframes fadeInDown {
-        from { opacity: 0; transform: translateY(-15px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-
-      /* Festive Greeting Animations */
-      .animate-shimmer {
-        background: linear-gradient(
-          90deg,
-          #1c1917 0%,
-          #a8a29e 25%,
-          #1c1917 50%,
-          #a8a29e 75%,
-          #1c1917 100%
-        );
-        background-size: 200% auto;
-        color: transparent;
-        -webkit-background-clip: text;
-        background-clip: text;
-        animation: shimmer 5s linear infinite;
-      }
-      @keyframes shimmer {
-        to { background-position: 200% center; }
-      }
-
-      .animate-float-slow {
-        animation: floatSlow 6s ease-in-out infinite;
-      }
-      @keyframes floatSlow {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-8px); }
-      }
-
       .pulse-soft {
         animation: pulseSoft 2.5s ease-in-out infinite;
       }

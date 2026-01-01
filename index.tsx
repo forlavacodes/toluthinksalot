@@ -63,18 +63,6 @@ const renderContent = (text: string) => {
 
 // --- Sub-Components ---
 
-const NewYearGreeting: React.FC = () => {
-  return (
-    <div className="mb-8 animate-fade-in-down animate-float-slow flex flex-col items-center select-none">
-      <span className="text-[9px] font-black uppercase tracking-[0.5em] text-stone-300">2025 Special</span>
-      <div className="mt-2 thought-font animate-shimmer font-bold italic text-lg md:text-xl">
-        Tolu wishes you a Happy New Year
-      </div>
-      <div className="w-12 h-[1px] bg-stone-200 mt-3"></div>
-    </div>
-  );
-};
-
 const Logo: React.FC<{ size?: 'sm' | 'md' | 'lg', className?: string, onClick?: () => void }> = ({ size = 'md', className = '', onClick }) => {
   const dimensions = {
     sm: 'w-8 h-8 text-sm',
@@ -213,8 +201,6 @@ const App: React.FC = () => {
         <header className="pt-32 pb-20 text-center max-w-4xl mx-auto w-full px-6 flex flex-col items-center">
           <Logo size="lg" className="mb-12" onClick={() => { setActiveFilter('All'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
           
-          <NewYearGreeting />
-
           <h1 className="heading-font text-6xl md:text-8xl font-black text-stone-900 mb-12 tracking-tighter leading-[0.9]">
             Random Things<br/>Tolu Says
           </h1>
